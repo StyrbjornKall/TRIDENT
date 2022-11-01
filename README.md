@@ -1,5 +1,5 @@
 # fishbAITe - fish based AI Toxicity engine
-
+![](final_model.svg)
 ## Overview
 This repository contains all code and data necessary to replicate the results presented in the publication L!.
 
