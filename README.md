@@ -10,7 +10,9 @@ The models in this repository can also be used directly through our online web a
 For very extensive predictions (>100 MB) consider cloning this repo and follow the tutorials under `tutorials`.
 
 Clone this repository:
-> git clone https://github.com/StyrbjornKall/fishbAIT
+```bash 
+git clone https://github.com/StyrbjornKall/fishbAIT
+```
 
 ## Layout
 `data` contains all preprocessed data used for training our fine-tuned EC50, EC10 and combined model.
