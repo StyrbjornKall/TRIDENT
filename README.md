@@ -12,6 +12,15 @@ For very extensive predictions (>100 MB) consider following the tutorial under `
 To do
 
 ## Layout
+`data` contains all preprocessed data used for training our fine-tuned EC50, EC10 and combined model.
+
+`development` contains all code used to replicate the findings presented in the publication.
+
+`fishbAIT` houses the fine-tuned model parameters
+
+`tutorials` contains tutorial notebooks for running inference using the fine-tuned models.
+
+`utils` contains necessary utility scripts in order to run both the scripts in `development` and `tutorials`.
 
 # License Information
 
