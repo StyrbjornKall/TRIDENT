@@ -3,13 +3,14 @@
 ## Overview
 This repository contains all code and data necessary to replicate the results presented in the publication L!.
 
+## How to Use
 The models in this repository can also be used directly through our online web application:
 [fishbAITe](https://new-fishbait-app.herokuapp.com/)
 
-For very extensive predictions (>100 MB) consider following the tutorial under `tutorials`.
+For very extensive predictions (>100 MB) consider cloning this repo and follow the tutorials under `tutorials`.
 
-## How to Use
-To do
+Clone this repository:
+> git clone https://github.com/StyrbjornKall/fishbAIT
 
 ## Layout
 `data` contains all preprocessed data used for training our fine-tuned EC50, EC10 and combined model.
