@@ -1,0 +1,84 @@
+method: bayes
+metric:
+  goal: minimize
+  name: Avg Best Validation Median Loss Normalized
+name: SMILES tokenizer 1 M
+parameters:
+  architecture:
+    value: ChemBERTa+DNN
+  base_model:
+    values:
+      - seyonec/SMILES_tokenized_PubChem_shard00_160k
+  batch_size:
+    values:
+      - 512
+  conc_thresh:
+    value: 500
+  concentration_sign:
+    value: =
+  dataset:
+    value: large
+  dropout:
+    values:
+      - 0.2
+  effects:
+    value:
+      - MOR
+  endpoints:
+    value:
+      - EC50
+  epochs:
+    values:
+      - 30
+  freeze_embedding:
+    values:
+      - false
+  inputs:
+    value:
+      - SMILES_Canonical_RDKit
+      - Duration_Value
+      - OneHotEnc_concatenated
+  k_folds:
+    values:
+      - 5
+  label:
+    value: mgperL
+  layer_1:
+    values:
+      - 350
+  layer_2:
+    values:
+      - 20
+  loss_fun:
+    values:
+      - MSELoss
+      - L1Loss
+  lr:
+    distribution: log_uniform
+    max: -6.9
+    min: -13.82
+  max_token_length:
+    value: 100
+  n_frozen_layers:
+    values:
+      - 0
+  n_hidden_layers:
+    values:
+      - 2
+  reinit_n_layers:
+    values:
+      - 0
+  sampling_procedure:
+    value: WRS_sqrt
+  save_results:
+    value: true
+  seed:
+    values:
+      - 42
+  species_classes:
+    value: []
+  species_groups:
+    value:
+      - fish
+  use_cls:
+    value: true
