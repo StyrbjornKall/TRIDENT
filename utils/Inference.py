@@ -64,8 +64,8 @@ class PreProcessDataForInference():
         Builds one hot encoded numpy arrays for given endpoints. Groups EC10 and NOEC measurements by renaming EC10 --> NOEC.
         '''
         if 'EC10' in list_of_endpoints:
-            print(f"Renamed EC10 *NOEC* in {sum(self.dataframe['Endpoint'] == 'EC10')} positions")
-            self.dataframe.loc[self.dataframe.Endpoint == 'EC10', 'Endpoint'] = 'NOEC'
+            print(f"Renamed EC10 *NOEC* in {sum(self.dataframe['endpoint'] == 'EC10')} positions")
+            self.dataframe.loc[self.dataframe.endpoint == 'EC10', 'endpoint'] = 'NOEC'
             list_of_endpoints.remove('EC10')
     
         if len(list_of_endpoints) > 1:
@@ -93,9 +93,9 @@ class PreProcessDataForInference():
             hot_enc_dict = dict(zip(effect_order, np.eye(len(effect_order), dtype=int).tolist()))
             self.dataframe = self.dataframe.reset_index().drop(columns='index', axis=1)
             try:
-                clas = self.dataframe.Effect.apply(lambda x: self._Match(x, list_of_effects))
+                clas = self.dataframe.effect.apply(lambda x: self._Match(x, list_of_effects))
                 encoded_clas = clas.apply(lambda x: np.array(hot_enc_dict[x]))
-                self.dataframe['Effect'] = encoded_clas
+                self.dataframe['effect'] = encoded_clas
             except:
                 raise Exception('An unexpected error occurred.')
 

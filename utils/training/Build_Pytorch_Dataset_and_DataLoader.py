@@ -79,7 +79,7 @@ class BuildDataLoader_KFold:
         return dataset
 
 
-    def BuildTrainingLoader(self,  sampler_choice: str='WRS', num_workers: int=0, weight_args: List[str]=None) -> PyTorchDataLoader:
+    def BuildTrainingLoader(self,  sampler_choice: str='WRS_sqrt', num_workers: int=0, weight_args: List[str]=None) -> PyTorchDataLoader:
         '''
         weight_args: list defined in order [SMILES_col_name, effect_col_name, endpoint_col_name]
         '''
@@ -88,6 +88,7 @@ class BuildDataLoader_KFold:
             counts = Counter(self.train[self.variables[0]])
             weights = self.train[self.variables[0]].apply(lambda x: 1/counts[x]).tolist()
         else:
+            # Builds based on all weight args
             counts = Counter(list(zip(self.train[weight_args[0]].tolist(), self.train[weight_args[1]].tolist(), self.train[weight_args[2]].tolist())))
             weights = 1/np.array([counts[i] for i in list(zip(self.train[weight_args[0]].tolist(), self.train[weight_args[1]].tolist(), self.train[weight_args[2]].tolist()))])
 
@@ -103,7 +104,7 @@ class BuildDataLoader_KFold:
         print(f'Built training dataloader with {len(dataset)} samples')
         return train_dataloader
 
-    def BuildValidationLoader(self, sampler_choice: str, num_workers: int=0) -> PyTorchDataLoader:
+    def BuildValidationLoader(self, sampler_choice: str='SequentialSampler', num_workers: int=0) -> PyTorchDataLoader:
         dataset = self.BuildDataset(self.val)
         if sampler_choice == 'WeightedRandomSampler':
             counts = Counter(self.val[self.variables[0]])
