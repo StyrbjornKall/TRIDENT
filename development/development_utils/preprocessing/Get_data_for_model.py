@@ -27,32 +27,32 @@ class PreprocessData():
         Function to filter out unwanted data from pandas dataframe. Note, requires specific column names to work.
 
         Columns names should be as follows: 
-        COMBINED_endpoint: e.g. 'EC50'
-        COMBINED_effect: e.g. 'MOR'
-        COMBINED_mgperL: concentration at endpoint
-        COMBINED_species_group: e.g. 'fish', 'insects', 'algae'
-        COMBINED_Duration_Value: duration (h)
-        COMBINED_Conc_sign: '=', '>', '<'
+        endpoint: e.g. 'EC50'
+        effect: e.g. 'MOR'
+        mgperL: concentration at endpoint
+        species_group: e.g. 'fish', 'insects', 'algae'
+        Duration_Value: duration (h)
+        Conc_sign: '=', '>', '<'
         
         '''
 
         self.dataframe.insert(0, 'internal_id', range(len(self.dataframe))) 
-        self.dataframe = self.dataframe[self.dataframe.COMBINED_endpoint.isin(endpoint)] if 'all' not in endpoint else self.dataframe
-        self.dataframe = self.dataframe[self.dataframe.COMBINED_effect.isin(effect)] if 'all' not in effect else self.dataframe
-        self.dataframe = self.dataframe[self.dataframe.COMBINED_Duration_Value > 0]
-        self.dataframe = self.dataframe[(self.dataframe.COMBINED_mgperL < concentration_thresh) & (self.dataframe.COMBINED_mgperL > 0)]
-        self.dataframe = self.dataframe[self.dataframe.COMBINED_species_group.isin(species_groups)] if species_groups[0] != 'all' else self.dataframe
-        self.dataframe.COMBINED_organism = self.dataframe.COMBINED_organism.apply(lambda x: self._GetSpecies(x))
+        self.dataframe = self.dataframe[self.dataframe.endpoint.isin(endpoint)] if 'all' not in endpoint else self.dataframe
+        self.dataframe = self.dataframe[self.dataframe.effect.isin(effect)] if 'all' not in effect else self.dataframe
+        self.dataframe = self.dataframe[self.dataframe.Duration_Value > 0]
+        self.dataframe = self.dataframe[(self.dataframe.mgperL < concentration_thresh) & (self.dataframe.mgperL > 0)]
+        self.dataframe = self.dataframe[self.dataframe.species_group.isin(species_groups)] if species_groups[0] != 'all' else self.dataframe
+        self.dataframe.organism = self.dataframe.organism.apply(lambda x: self._GetSpecies(x))
         
         if log_data == True:
-            self.dataframe.COMBINED_mgperL = np.log10(self.dataframe.COMBINED_mgperL)
-            self.dataframe.COMBINED_Duration_Value = np.log10(self.dataframe.COMBINED_Duration_Value)
+            self.dataframe.mgperL = np.log10(self.dataframe.mgperL)
+            self.dataframe.Duration_Value = np.log10(self.dataframe.Duration_Value)
 
         if concentration_sign != None:
-            self.dataframe = self.dataframe[self.dataframe.COMBINED_Conc_sign == concentration_sign]
+            self.dataframe = self.dataframe[self.dataframe.Conc_sign == concentration_sign]
 
         if drop_columns == True:
-            for col in ['smudge_reference', 'COMBINED_DOI', 'COMBINED_Duration_Unit', 'COMBINED_pubmed_ID']:
+            for col in ['smudge_reference', 'DOI', 'Duration_Unit', 'pubmed_ID']:
                 try:
                     self.dataframe = self.dataframe.drop(columns=[col])
                 except:
@@ -61,52 +61,21 @@ class PreprocessData():
         self.dataframe = self.dataframe.reset_index().drop(columns='index', axis=1)
         return self.dataframe
 
-
-
-    def GetOneHotSpeciesGroup(self, list_of_species_groups: List[str]):
-        '''
-        Builds one hot encoded numpy arrays for given list of species groups, i.e. fish/invertebrates/algae etc.
-
-        Groups crustaceans and invertebrates by renaming crustaceans --> invertebrates.
-        '''
-        if 'crustaceans' in list_of_species_groups:
-            print(f"Renamed crustaceans *invertebrates* in {sum(self.dataframe['COMBINED_species_group'] == 'crustaceans')} positions")
-            self.dataframe.loc[self.dataframe.COMBINED_species_group == 'crustaceans', 'COMBINED_species_group'] = 'invertebrates'
-            list_of_species_groups.remove('crustaceans')
-
-        if len(list_of_species_groups) > 1:
-            hot_enc_dict = dict(zip(list_of_species_groups, np.eye(len(list_of_species_groups)).astype(int).tolist()))
-            self.dataframe = self.dataframe.reset_index().drop(columns='index', axis=1)
-            try:
-                clas = self.dataframe.COMBINED_species_group.apply(lambda x: self._Match(x, list_of_species_groups))
-                encoded_clas = clas.apply(lambda x: np.array(hot_enc_dict[x]))
-                self.dataframe['OneHotEnc_species_group'] = encoded_clas
-            except:
-                raise Exception('An unexpected error occurred.')
-
-        else:
-            print('''Did not return onehotencoding for Species groups. Why? You specified only one species group.''')
-
-        return self.dataframe
-
-
-
-
-    def GetOneHotEndpoint(self, endpoints: List[str]):
+    def __GetOneHotEndpoint(self, list_of_endpoints: List[str]):
         '''
         Builds one hot encoded numpy arrays for given endpoints. Groups EC10 and NOEC measurements by renaming EC10 --> NOEC.
         '''
-        list_of_endpoints = endpoints.copy()
-        if 'EC10' in list_of_endpoints:
-            print(f"Renamed EC10 *NOEC* in {sum(self.dataframe['COMBINED_endpoint'] == 'EC10')} positions")
-            self.dataframe.loc[self.dataframe.COMBINED_endpoint == 'EC10', 'COMBINED_endpoint'] = 'NOEC'
-            list_of_endpoints.remove('EC10')
+        list_of_endpoints_tmp = list_of_endpoints.copy()
+        if 'EC10' in list_of_endpoints_tmp:
+            print(f"Renamed EC10 *NOEC* in {sum(self.dataframe['endpoint'] == 'EC10')} positions")
+            self.dataframe.loc[self.dataframe.endpoint == 'EC10', 'endpoint'] = 'NOEC'
+            list_of_endpoints_tmp.remove('EC10')
             
-        if len(list_of_endpoints) > 1:
-            hot_enc_dict = dict(zip(list_of_endpoints, np.eye(len(list_of_endpoints), dtype=int).tolist()))
+        if len(list_of_endpoints_tmp) > 1:
+            hot_enc_dict = dict(zip(list_of_endpoints_tmp, np.eye(len(list_of_endpoints_tmp), dtype=int).tolist()))
             self.dataframe = self.dataframe.reset_index().drop(columns='index', axis=1)
             try:
-                clas = self.dataframe.COMBINED_endpoint.apply(lambda x: self._Match(x, list_of_endpoints))
+                clas = self.dataframe.endpoint.apply(lambda x: self._Match(x, list_of_endpoints_tmp))
                 encoded_clas = clas.apply(lambda x: np.array(hot_enc_dict[x]))
                 self.dataframe['OneHotEnc_endpoint'] = encoded_clas
             except:
@@ -119,7 +88,7 @@ class PreprocessData():
 
 
 
-    def GetOneHotEffect(self, list_of_effects: List[str]):
+    def __GetOneHotEffect(self, list_of_effects: List[str]):
         '''
         Builds one hot encoded numpy arrays for given effects.
         '''
@@ -128,7 +97,7 @@ class PreprocessData():
             hot_enc_dict = dict(zip(list_of_effects, np.eye(len(list_of_effects), dtype=int).tolist()))
             self.dataframe = self.dataframe.reset_index().drop(columns='index', axis=1)
             try:
-                clas = self.dataframe.COMBINED_effect.apply(lambda x: self._Match(x, list_of_effects))
+                clas = self.dataframe.effect.apply(lambda x: self._Match(x, list_of_effects))
                 encoded_clas = clas.apply(lambda x: np.array(hot_enc_dict[x]))
                 self.dataframe['OneHotEnc_effect'] = encoded_clas
             except:
@@ -140,17 +109,15 @@ class PreprocessData():
         return self.dataframe
 
 
-
-
-    def GetLineages(self, path_dict_of_species_and_lineage):
+    def GetLineages(self):
         '''
         Retrieves lineages produced by ncbi taxonomy by querying a locally stored dictionary using species name inside the dataset. 
         '''
         self.dataframe = self.dataframe.reset_index().drop(columns='index', axis=1)
         try:
-            file = open(path_dict_of_species_and_lineage, 'rb')
+            file = open('dict_of_species_and_lineage', 'rb')
             dict_of_species_and_lineage = pkl.load(file)
-            self.dataframe['Lineage'] = self.dataframe.COMBINED_organism.apply(lambda x: dict_of_species_and_lineage[x][0] if x in dict_of_species_and_lineage.keys() else [])
+            self.dataframe['Lineage'] = self.dataframe.organism.apply(lambda x: dict_of_species_and_lineage[x][0] if x in dict_of_species_and_lineage.keys() else [])
             file.close()
         except OSError as e:
             print(f'Could not load dictionary. {e}') 
@@ -158,9 +125,7 @@ class PreprocessData():
         return self.dataframe
 
 
-
-
-    def GetOneHotSpeciesClass(self, groups: List[str]):
+    def __GetOneHotSpeciesClass(self, groups: List[str]):
         '''
         Builds one hot encoded numpy arrays for given species groups. Requires dataframe to contain Lineage column.
 
@@ -187,12 +152,17 @@ class PreprocessData():
 
         return self.dataframe
 
-
-
-    def ConcatenateOneHotEnc(self):
+    def ConcatenateOneHotEnc(self, list_of_endpoints: List[str], list_of_effects: List[str], list_of_species_class: List[str]=None):
         '''
-        Concatenates all one hot encodings into one numpy vector. Preferably use this as input to network.
+        Builds a one hot encoding vector in the exact same way as how the model was trained.
+
+        Specify the endpoints and effects for which the model should generate its predictions.
         '''
+        self.dataframe = self.__GetOneHotEndpoint(list_of_endpoints=list_of_endpoints)
+        self.dataframe = self.__GetOneHotEffect(list_of_effects=list_of_effects)
+        if list_of_species_class != None:
+            self.dataframe = self.__GetOneHotSpeciesClass(groups)
+
         try:
             columns = self.dataframe.filter(like='OneHotEnc').columns.tolist()
             temp1 = np.array([el.tolist() for el in self.dataframe[columns[0]].values])
@@ -212,14 +182,14 @@ class PreprocessData():
 
 
 
-    def GetPubchemCID(self, path_dict_of_SMILES_and_CID: str, drop_missing_entries: bool=True):
+    def GetPubchemCID(self, drop_missing_entries: bool=True):
         '''
         Retrieves PubChem CIDs by querying a locally stored dictionary using SMILES inside the dataset. 
         
         If this does not succeed, raises error and asks for permission to download from pubchem.
         '''
         try:
-            dict_of_SMILES = pkl.load(open(path_dict_of_SMILES_and_CID, 'rb'))
+            dict_of_SMILES = pkl.load(open('dict_of_SMILES_and_CID', 'rb'))
         
         except OSError:
             print('Could not load dictionary.') 
@@ -259,11 +229,11 @@ class PreprocessData():
         
 
 
-    def GetPubchemSMILES(self, path_CID_metadata: str):
+    def GetPubchemSMILES(self):
         '''
         Retrieves Canonical SMILES using PubChem CIDs. Subfunction of GetMetadata.
         '''
-        self.dataframe = self.GetMetadata(path_CID_metadata, list_of_metadata=['isosmiles'])
+        self.dataframe = self.GetMetadata(list_of_metadata=['isosmiles'])
         self.dataframe = self.dataframe.rename(columns={'isosmiles': 'SMILES_Canonical_pubchem'})
 
         return self.dataframe
@@ -280,11 +250,11 @@ class PreprocessData():
 
 
 
-    def GetMetadata(self, path_CID_metadata: str, list_of_metadata: List[str]=['mw', 'polararea','complexity','xlogp','hbonddonor','hbondacc','isosmiles', 'cmpdname']):
+    def GetMetadata(self, list_of_metadata: List[str]=['mw', 'polararea','complexity','xlogp','hbonddonor','hbondacc','isosmiles', 'cmpdname']):
         '''
         Retrieves additional metadata by pubchem ID.
         '''
-        metadata = pd.read_csv(path_CID_metadata)
+        metadata = pd.read_csv('Pubchem_metadata.csv')
         merged = pd.merge(self.dataframe, metadata, left_on='Pubchem_CID', right_on='cid')
 
         merged = merged[self.dataframe.columns.tolist()+list_of_metadata] if list_of_metadata[0] != 'all' else merged

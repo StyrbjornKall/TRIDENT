@@ -1,0 +1,105 @@
+method: grid
+metric:
+  goal: minimize
+  name: Best Validation Median Loss Normalized
+name: 100-fold_CV_EC50
+parameters:
+  architecture:
+    value: ChemBERTa+DNN
+  base_model:
+    values:
+      - seyonec/PubChem10M_SMILES_BPE_450k
+  batch_size:
+    values:
+      - 512
+  conc_thresh:
+    value: 500
+  concentration_sign:
+    value: =
+  dataset:
+    value: large
+  dropout:
+    values:
+      - 0.2
+  effects:
+    value:
+      - MOR
+  endpoints:
+    value:
+      - EC50
+  epochs:
+    values:
+      - 40
+  fold_id:
+    values:
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
+      - 10
+  freeze_embedding:
+    values:
+      - false
+  inputs:
+    value:
+      - SMILES_Canonical_RDKit
+      - COMBINED_Duration_Value
+      - OneHotEnc_concatenated
+  k_folds:
+    values:
+      - 10
+  label:
+    value: COMBINED_mgperL
+  layer_1:
+    values:
+      - 700
+  layer_2:
+    values:
+      - 500
+  layer_3:
+    values:
+      - 300
+  loss_fun:
+    values:
+      - L1Loss
+  lr:
+    values:
+      - 0.00015
+  max_token_length:
+    value: 100
+  n_frozen_layers:
+    values:
+      - 0
+  n_hidden_layers:
+    value: 3
+  reinit_n_layers:
+    values:
+      - 0
+  sampling_procedure:
+    value: WRS_sqrt
+  save_results:
+    value: true
+  seed:
+    values:
+      - 41
+      - 42
+      - 43
+      - 44
+      - 45
+      - 46
+      - 47
+      - 48
+      - 49
+      - 50
+  species_classes:
+    value: []
+  species_groups:
+    value:
+      - fish
+  use_cls:
+    value: true
