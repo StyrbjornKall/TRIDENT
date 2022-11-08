@@ -1,0 +1,109 @@
+activation:
+  desc: null
+  value: ReLU
+add_roberta_layer:
+  desc: null
+  value: false
+batch_size:
+  desc: null
+  value: 512
+conc_thresh:
+  desc: null
+  value: 500
+concentration_sign:
+  desc: null
+  value: '='
+dataset:
+  desc: null
+  value: large
+dropout:
+  desc: null
+  value: 0.2
+effects:
+  desc: null
+  value:
+    - MOR
+    - DVP
+    - POP
+    - MPH
+    - ITX
+    - REP
+    - GRO
+endpoints:
+  desc: null
+  value:
+    - EC10
+    - NOEC
+epochs:
+  desc: null
+  value: 30
+fc1:
+  desc: null
+  value: 1
+freeze_embedding:
+  desc: null
+  value: false
+hidden_layer_size:
+  desc: null
+  value:
+  - 700
+  - 500
+  - 300
+inputs:
+  desc: null
+  value:
+  - SMILES_Canonical_RDKit
+  - COMBINED_Duration_Value
+  - OneHotEnc_concatenated
+label:
+  desc: null
+  value: COMBINED_mgperL
+log_data:
+  desc: null
+  value: true
+loss_fun:
+  desc: null
+  value: L1Loss
+lr:
+  desc: null
+  value: 0.0005
+max_token_length:
+  desc: null
+  value: 100
+n_frozen_layers:
+  desc: null
+  value: 0
+n_hidden_layers:
+  desc: null
+  value: 3
+optimizer:
+  desc: null
+  value: AdamW
+pretrained_model:
+  desc: null
+  value: seyonec/PubChem10M_SMILES_BPE_450k
+reinit_n_layers:
+  desc: null
+  value: 0
+sampler_weight_args:
+  desc: null
+  value:
+  - SMILES_Canonical_RDKit
+  - COMBINED_effect
+  - COMBINED_endpoint
+sampling_procedure:
+  desc: null
+  value: WRS_sqrt
+seed:
+  desc: null
+  value: 42
+species_classes:
+  desc: null
+  value: []
+species_groups:
+  desc: null
+  value:
+  - fish
+use_cls:
+  desc: null
+  value: true

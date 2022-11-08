@@ -2,7 +2,7 @@ method: bayes
 metric:
   goal: minimize
   name: Avg Best Validation Median Loss Normalized
-name: SWEEP across 2 hidden layers
+name: SWEEP across 3 hidden layers
 parameters:
   architecture:
     value: ChemBERTa+DNN
@@ -24,9 +24,16 @@ parameters:
   effects:
     value:
       - MOR
+      - DVP
+      - POP
+      - MPH
+      - ITX
+      - REP
+      - GRO
   endpoints:
     value:
-      - EC50
+      - EC10
+      - NOEC
   epochs:
     values:
       - 30
@@ -51,6 +58,10 @@ parameters:
     distribution: int_uniform
     max: 500
     min: 20
+  layer_3:
+    distribution: int_uniform
+    max: 500
+    min: 20
   loss_fun:
     values:
       - L1Loss
@@ -64,7 +75,7 @@ parameters:
     values:
       - 0
   n_hidden_layers:
-    value: 2
+    value: 3
   reinit_n_layers:
     values:
       - 0
