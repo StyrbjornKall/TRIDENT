@@ -130,16 +130,16 @@ class Inference_dataset(Dataset):
 
     *Variables should be a list with column names corresponding to the column containing
     1. SMILES
-    2. Exposure Duration
-    3. Endpoint
-    4. Effect
+    2. exposure_duration
+    3. onehotencoding
 
     In the specified order.
     '''
-    def __init__(self, df: PandasDataFrame, variables: List[str], tokenizer):
+    def __init__(self, df: PandasDataFrame, variables: List[str], tokenizer, max_len: int=100):
         self.df = df
         self.tokenizer = tokenizer
         self.variables = variables
+        self.max_len = max_len
 
     def __len__(self):
         return len(self.df)
@@ -152,16 +152,23 @@ class Inference_dataset(Dataset):
         mask = torch.tensor(encodings['attention_mask'])
         dur = torch.tensor(row[self.variables[1]], dtype=torch.float32)
         onehot = torch.tensor(row[self.variables[2]], dtype=torch.float32)
-        sample = {'input_ids': enc['input_ids'], 'attention_mask': enc['attention_mask'], 'duration': dur, 'onehotenc': onehot}
+        sample = {'input_ids': ids, 'attention_mask': mask, 'duration': dur, 'onehotenc': onehot}
 
         return sample
 
-class BuildInferenceDataLoader():
+class BuildInferenceDataLoaderAndDataset:
     '''
-    Class to build PyTorch Dataloader for batch inference. 
+    Class to build PyTorch Dataloader and Dataset for batch inference. 
     The Dataloader uses a SequentialSampler
+
+    *Variables should be a list with column names corresponding to the column containing
+    1. SMILES
+    2. exposure_duration
+    3. onehotencoding
+
+    In the specified order.
     '''
-    def __init__(self, df: PandasDataFrame, variables: List[str], tokenizer, batch_size: int=8, max_length: int=100, seed: int=42):
+    def __init__(self, df: PandasDataFrame, variables: List[str], tokenizer, batch_size: int=8, max_length: int=100, seed: int=42, num_workers: int=0):
         self.df = df
         self.bs = batch_size
         self.tokenizer = tokenizer
@@ -169,14 +176,9 @@ class BuildInferenceDataLoader():
         self.variables = variables
         self.seed = seed
         self.collator = DataCollatorWithPadding(tokenizer=self.tokenizer, padding='longest', return_tensors='pt')
+        self.num_workers = num_workers
         
-    def BuildDataset(self, df: PandasDataFrame) -> PandasDataFrame:
-        dataset = Inference_dataset(df, self.tokenizer)
-        return dataset
+        self.dataset = Inference_dataset(df, self.variables, self.tokenizer, max_len=self.max_len)
 
-    def BuildValidationLoader(self, num_workers: int=0) -> PyTorchDataLoader:
-        dataset = self.BuildDataset(self.df)
-        sampler = SequentialSampler(dataset)
-        dataloader = DataLoader(dataset, sampler=sampler, batch_size=self.bs, collate_fn=self.collator, num_workers=num_workers)
-
-        return dataloader
+        sampler = SequentialSampler(self.dataset)
+        self.dataloader = DataLoader(self.dataset, sampler=sampler, batch_size=self.bs, collate_fn=self.collator, num_workers=self.num_workers)
