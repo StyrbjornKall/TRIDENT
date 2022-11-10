@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from transformers import AutoModel, AutoTokenizer
 
+
 class DNN_module(nn.Module):
     def __init__(self, one_hot_enc_len, n_hidden_layers, layer_sizes, dropout: float=0.2):
         super(DNN_module, self).__init__()
@@ -49,12 +50,12 @@ class DNN_module(nn.Module):
         x = x.squeeze(1)
         return x
 
-class fishbAIT(nn.Module):
+class fishbAIT_model(nn.Module):
     '''
-    Class to build Transformer and DNN structure. Supports maximum 3 hidden layers and RoBERTa transformers.
+    Class to combine the Transformer (chemberta) and DNN module.
     '''
     def __init__(self, roberta=None, dnn=None):
-        super(fishbAIT, self).__init__()
+        super(fishbAIT_model, self).__init__()
         self.roberta = roberta 
         self.dnn = dnn
         
@@ -67,35 +68,3 @@ class fishbAIT(nn.Module):
         out = self.dnn(inputs)
         
         return out
-
-        
-def load_fine_tuned_model(version: str='EC50EC10', path=None):
-    roberta = AutoModel.from_pretrained(f'StyrbjornKall/fishbAIT_{version}')
-    tokenizer = AutoTokenizer.from_pretrained(f'StyrbjornKall/fishbAIT_{version}')
-
-    dnn = DNN_module(one_hot_enc_len=1, n_hidden_layers=3, layer_sizes=[700,500,300])
-    if version == 'EC50':
-        dnn.one_hot_enc_len = 1
-    elif version == 'EC10':
-        dnn.one_hot_enc_len = 7
-    elif version == 'EC50EC10':
-        dnn.one_hot_enc_len = 9
-    
-    dnn = __loadcheckpoint__(dnn, version, path)
-
-    return fishbAIT(roberta=roberta, dnn=dnn), tokenizer
-
-def __loadcheckpoint__(dnn, version, path):
-    try:
-        if path != None:
-            checkpoint_dnn = torch.load(f'{path}final_model_{version}_dnn_saved_weights.pt', map_location='cpu')
-        else:
-            checkpoint_dnn = torch.load(f'../fishbAIT/final_model_{version}_dnn_saved_weights.pt', map_location='cpu')
-        dnn.load_state_dict(checkpoint_dnn)
-    except:
-        raise FileNotFoundError(
-            f'''Tried to load DNN module from path 
-            ../fishbAIT/final_model_{version}_dnn_saved_weights.pt
-            but could not find file. Please specify the full path to the saved model.''')
-    
-    return dnn

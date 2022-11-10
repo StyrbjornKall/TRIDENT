@@ -23,7 +23,7 @@ class PreProcessDataForInference():
 
     If the data consists only of a single endpoint or effect no one hot encoding will be generated.
     '''
-    def __init__(self, dataframe):
+    def __init__(self, dataframe: PandasDataFrame):
         self.dataframe = dataframe
 
     def GetOneHotEnc(self, list_of_endpoints: List[str], list_of_effects: List[str]):
@@ -78,8 +78,7 @@ class PreProcessDataForInference():
             hot_enc_dict = dict(zip(encoding_order, np.eye(len(encoding_order), dtype=int).tolist()))
             self.dataframe = self.dataframe.reset_index().drop(columns='index', axis=1)
             try:
-                clas = self.dataframe.endpoint.apply(lambda x: self.__Match(x, list_of_endpoints))
-                encoded_clas = clas.apply(lambda x: np.array(hot_enc_dict[x]))
+                encoded_clas = self.dataframe.endpoint.apply(lambda x: np.array(hot_enc_dict[x]))
                 self.dataframe['OneHotEnc_endpoint'] = encoded_clas
             except:
                 raise Exception('An unexpected error occurred.')
@@ -98,9 +97,8 @@ class PreProcessDataForInference():
             hot_enc_dict = dict(zip(effect_order, np.eye(len(effect_order), dtype=int).tolist()))
             self.dataframe = self.dataframe.reset_index().drop(columns='index', axis=1)
             try:
-                clas = self.dataframe.effect.apply(lambda x: self._Match(x, list_of_effects))
-                encoded_clas = clas.apply(lambda x: np.array(hot_enc_dict[x]))
-                self.dataframe['effect'] = encoded_clas
+                encoded_clas = self.dataframe.effect.apply(lambda x: np.array(hot_enc_dict[x]))
+                self.dataframe['OneHotEnc_effect'] = encoded_clas
             except:
                 raise Exception('An unexpected error occurred.')
 
@@ -110,13 +108,6 @@ class PreProcessDataForInference():
         return self.dataframe
 
     ## Convenience functions
-    def __Match(self, x, groups):
-        try:
-            clas = [y for y in groups if y in x][0]
-        except:
-            clas = 'other'
-        return clas
-
     def __CanonicalizeRDKit(self, smiles):
         try:
             return Chem.MolToSmiles(Chem.MolFromSmiles(smiles), canonical=True)
