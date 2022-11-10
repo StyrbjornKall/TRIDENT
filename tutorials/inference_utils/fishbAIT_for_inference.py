@@ -64,6 +64,9 @@ class fishbAIT:
 
 
     def predict_toxicity(self, SMILES, exposure_duration: int, endpoint: str, effect: str):
+        
+        self.__check_allowed_prediction__(endpoint, effect)
+
         if isinstance(SMILES, pd.DataFrame):
             if 'smiles' in SMILES.columns:
                 SMILES.rename(columns={'smiles': 'SMILES'}, inplace=True)
@@ -97,4 +100,37 @@ class fishbAIT:
         SMILES['predictions (mg/L)'] = 10**preds
 
         return SMILES
+
+
+    def __check_allowed_prediction__(self, endpoint, effect):
+
+        if endpoint not in self.list_of_endpoints:
+            raise RuntimeError(f'''You are trying to predict a `{endpoint}` endpoint with fishbAIT version {self.model_version}. 
+            This will not work. Reload a correct version of fishbAIT (i.e. `EC50`, `EC10` or `EC50EC10`) or specify correct endpoint.
+            For additional information call: __help__''')
+        
+        if effect not in self.list_of_effects:
+            raise RuntimeError(f'''You are trying to predict a `{effect}` effect with fishbAIT version {self.model_version}. 
+            This will not work. Reload a correct version of fishbAIT (i.e. `EC50`, `EC10` or `EC50EC10`) or specify correct effect.
+            For additional information call: __help__''')
+
     
+    def __help__(self):
+        print('''
+        This is a python class used to load and use the fine-tuned deep-learning model `fishbAIT` for environmental toxicity predictions in fish.
+        The models have been trained on a large corpus of SMILES (chemical representations) on data collected from various sources.
+
+        Currently there are three models available for use.
+        - `EC50` The EC50 model is trained on EC50 mortality (MOR) data and is thus suitable for the prediction of said endpoints.
+        - `EC10` The EC10 model is trained on EC10/NOEC data with various effects (mortality, intoxication, development, reproduction, morphology, growth and population) ab. (MOR, ITX, DVP, REP, MPH, GRO, POP)
+        - `EC50EC10` The EC50EC10 model is trained on both EC50, EC10 and NOEC data with various effects (mortality, intoxication, development, reproduction, morphology, growth and population) ab. (MOR, ITX, DVP, REP, MPH, GRO, POP)
+
+        For the most accurate predictions, refer to the combined EC50EC10 model.
+        
+        LOADING A MODEL:
+        Load the model by initiating this class with the desired model version.
+
+        MAKING PREDICTIONS:
+        Making predictions is easy. Just  and use the `predict_toxicity` function to make a prediction on a list of SMILES.
+        
+        ''')
