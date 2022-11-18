@@ -91,6 +91,8 @@ parameters:
     value: WRS_sqrt
   save_results:
     value: true
+  save_model:
+    value: true
   seed:
     values:
       - 41
