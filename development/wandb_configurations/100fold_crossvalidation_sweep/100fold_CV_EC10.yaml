@@ -105,6 +105,8 @@ parameters:
       - 48
       - 49
       - 50
+  smiles_col_name:
+    value: 'SMILES_Canonical_RDKit'
   species_classes:
     value: []
   species_groups:
