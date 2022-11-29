@@ -90,9 +90,6 @@ sampling_procedure:
 seed:
   desc: null
   value: 42
-smiles_col_name:
-  desc: null
-  value: SMILES_Canonical_RDKit
 species_classes:
   desc: null
   value: []
