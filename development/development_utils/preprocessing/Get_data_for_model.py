@@ -36,13 +36,14 @@ class PreprocessData():
         
         '''
 
-        self.dataframe.insert(0, 'internal_id', range(len(self.dataframe))) 
+        if 'internal_id' not in self.dataframe.columns:
+            self.dataframe.insert(0, 'internal_id', range(len(self.dataframe))) 
         self.dataframe = self.dataframe[self.dataframe.endpoint.isin(endpoint)] if 'all' not in endpoint else self.dataframe
         self.dataframe = self.dataframe[self.dataframe.effect.isin(effect)] if 'all' not in effect else self.dataframe
         self.dataframe = self.dataframe[self.dataframe.Duration_Value > 0]
         self.dataframe = self.dataframe[(self.dataframe.mgperL < concentration_thresh) & (self.dataframe.mgperL > 0)]
         self.dataframe = self.dataframe[self.dataframe.species_group.isin(species_groups)] if species_groups[0] != 'all' else self.dataframe
-        self.dataframe.organism = self.dataframe.organism.apply(lambda x: self._GetSpecies(x))
+        self.dataframe.organism = self.dataframe.organism.apply(lambda x: self.__GetSpecies(x))
         
         if log_data == True:
             self.dataframe.mgperL = np.log10(self.dataframe.mgperL)
@@ -75,7 +76,7 @@ class PreprocessData():
             hot_enc_dict = dict(zip(list_of_endpoints_tmp, np.eye(len(list_of_endpoints_tmp), dtype=int).tolist()))
             self.dataframe = self.dataframe.reset_index().drop(columns='index', axis=1)
             try:
-                clas = self.dataframe.endpoint.apply(lambda x: self._Match(x, list_of_endpoints_tmp))
+                clas = self.dataframe.endpoint.apply(lambda x: self.__Match(x, list_of_endpoints_tmp))
                 encoded_clas = clas.apply(lambda x: np.array(hot_enc_dict[x]))
                 self.dataframe['OneHotEnc_endpoint'] = encoded_clas
             except:
@@ -97,7 +98,7 @@ class PreprocessData():
             hot_enc_dict = dict(zip(list_of_effects, np.eye(len(list_of_effects), dtype=int).tolist()))
             self.dataframe = self.dataframe.reset_index().drop(columns='index', axis=1)
             try:
-                clas = self.dataframe.effect.apply(lambda x: self._Match(x, list_of_effects))
+                clas = self.dataframe.effect.apply(lambda x: self.__Match(x, list_of_effects))
                 encoded_clas = clas.apply(lambda x: np.array(hot_enc_dict[x]))
                 self.dataframe['OneHotEnc_effect'] = encoded_clas
             except:
@@ -138,7 +139,7 @@ class PreprocessData():
 
                 hot_enc_dict = dict(zip(groups, np.eye(len(groups)).astype(int).tolist()))
                 self.dataframe = self.dataframe.reset_index().drop(columns='index', axis=1)
-                clas = self.dataframe.Lineage.apply(lambda x: self._Match(x, groups))
+                clas = self.dataframe.Lineage.apply(lambda x: self.__Match(x, groups))
                 encoded_clas = clas.apply(lambda x: np.array(hot_enc_dict[x]))
                 n_other = np.sum(clas=='other')
                 
@@ -161,7 +162,7 @@ class PreprocessData():
         self.dataframe = self.__GetOneHotEndpoint(list_of_endpoints=list_of_endpoints)
         self.dataframe = self.__GetOneHotEffect(list_of_effects=list_of_effects)
         if list_of_species_class != None:
-            self.dataframe = self.__GetOneHotSpeciesClass(groups)
+            self.dataframe = self.__GetOneHotSpeciesClass(list_of_species_class)
 
         try:
             columns = self.dataframe.filter(like='OneHotEnc').columns.tolist()
@@ -200,10 +201,10 @@ class PreprocessData():
                 dict_of_SMILES = dict.fromkeys(unique_SMILES)
 
                 for smile in tqdm(unique_SMILES):
-                    dict_of_SMILES[smile] = self._GetCID(smile)
+                    dict_of_SMILES[smile] = self.__GetCID(smile)
 
                 self.dataframe['Pubchem_CID'] = self.dataframe.SMILES.apply(lambda x: dict_of_SMILES[x])
-                pkl.dump(dict_of_SMILES, open(path_dict_of_SMILES_and_CID, 'wb'))
+                pkl.dump(dict_of_SMILES, open('dict_of_SMILES_and_CID', 'wb'))
 
         self.dataframe = self.dataframe.reset_index().drop(columns='index', axis=1)
         CID_list = np.zeros(len(self.dataframe)).astype(int)
@@ -267,14 +268,14 @@ class PreprocessData():
 
 
     ## Convenience functions
-    def _Match(self, x, groups):
+    def __Match(self, x, groups):
         try:
             clas = [y for y in groups if y in x][0]
         except:
             clas = 'other'
         return clas
 
-    def _GetCID(self, smiles):
+    def __GetCID(self, smiles):
         url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/{smiles}/cids/TXT"
         try:
             r = requests.get(url)
@@ -284,18 +285,12 @@ class PreprocessData():
             cid = None
         return cid
 
-    def _GetSpecies(self, x):
+    def __GetSpecies(self, x):
         try:
             x = ' '.join(x.split()[0:2])
         except:
             x = 'unspecified'
         return x
-
-    def _GetMolFromSMILES(self, smiles):
-        try:
-            return wandb.Molecule.from_smiles(smiles)
-        except:
-            return None
 
     def __CanonicalizeRDKit(self, smiles):
         try:

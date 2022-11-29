@@ -26,7 +26,7 @@ PyTorchDataLoader = TypeVar('torch.utils.data.DataLoader')
 
 class Make_KFolds:
     """
-    Build a pandas dataframe with unique SMILES as index and K columns, one per fold, containing bools for whether the SMILES is used for training in the fold or not.
+    Builds a pandas dataframe with unique SMILES as index and K columns, one per fold, containing bools for whether the SMILES is used for training in the fold or not.
     """
     def __init__(self):
         pass
