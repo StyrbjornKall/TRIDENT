@@ -64,13 +64,13 @@ class PreprocessData():
 
     def __GetOneHotEndpoint(self, list_of_endpoints: List[str]):
         '''
-        Builds one hot encoded numpy arrays for given endpoints. Groups EC10 and NOEC measurements by renaming EC10 --> NOEC.
+        Builds one hot encoded numpy arrays for given endpoints. Groups EC10 and NOEC measurements by renaming NOEC --> EC10.
         '''
         list_of_endpoints_tmp = list_of_endpoints.copy()
         if 'EC10' in list_of_endpoints_tmp:
-            print(f"Renamed EC10 *NOEC* in {sum(self.dataframe['endpoint'] == 'EC10')} positions")
-            self.dataframe.loc[self.dataframe.endpoint == 'EC10', 'endpoint'] = 'NOEC'
-            list_of_endpoints_tmp.remove('EC10')
+            print(f"Renamed NOEC *EC10* in {sum(self.dataframe['endpoint'] == 'NOEC')} positions")
+            self.dataframe.loc[self.dataframe.endpoint == 'NOEC', 'endpoint'] = 'EC10'
+            list_of_endpoints_tmp.remove('NOEC')
             
         if len(list_of_endpoints_tmp) > 1:
             hot_enc_dict = dict(zip(list_of_endpoints_tmp, np.eye(len(list_of_endpoints_tmp), dtype=int).tolist()))
