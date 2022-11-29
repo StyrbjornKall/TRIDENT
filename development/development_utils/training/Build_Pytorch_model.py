@@ -1,9 +1,5 @@
 import torch
 import torch.nn as nn
-
-import copy
-import pickle as pkl
-import random
 from typing import List
 
 
@@ -112,7 +108,20 @@ class Modify_architecture:
 
 
 class DNN_module(nn.Module):
-    def __init__(self, one_hot_enc_len, n_hidden_layers, layer_sizes, dropout, activation):
+    """
+    # DNN module
+    nn.Module class to generate DNN module. Can be used separately or as an addition to other models, e.g. as a transformer regression head.
+    
+    The network uses a ReLU activation function.
+
+    ## Inputs
+    - one_hot_enc_len: The length of the one-hot-encoding vector (set to 0 if not applicable)
+    - layer_sizes: a list of layer sizes with same length as n_hidden_layers
+    - n_hidden_layers: the number of hidden layers
+    - dropout: the dropout rate of each hidden layer
+
+    """
+    def __init__(self, one_hot_enc_len: int, n_hidden_layers: int, layer_sizes: List[int], dropout: float):
         super(DNN_module, self).__init__()
         self.one_hot_enc_len = one_hot_enc_len
         self.n_hidden_layers = n_hidden_layers
@@ -155,12 +164,17 @@ class DNN_module(nn.Module):
             x = self.dropout(x)
             x = self.fc5(x)
         
-        x = x.squeeze()
+        x = x.squeeze(1)
         return x
 
 class fishbAIT(nn.Module):
     '''
-    Class to build Transformer and DNN structure. Supports maximum 3 hidden layers and RoBERTa transformers.
+    # fishbAIT
+    Class to build Transformer and DNN structure. Supports maximum 4 hidden layers and RoBERTa transformers.
+
+    ## Inputs
+    - roberta: a pytorch transformer (BERT-like) model
+    - dnn: an instance of the DNN_module class
     '''
     def __init__(self, roberta, dnn):
         super(fishbAIT, self).__init__()
@@ -168,11 +182,11 @@ class fishbAIT(nn.Module):
         self.dnn = dnn
         
     def forward(self, sent_id, mask, exposure_duration, one_hot_encoding):
-        roberta_output = self.roberta(sent_id, attention_mask=mask)[0]#.detach()#[:,0,:]#.detach() # all samples in batch : only CLS embedding : entire embedding dimension
+        roberta_output = self.roberta(sent_id, attention_mask=mask)[0] # Last hidden state NOT pooler output
 
-        roberta_output = roberta_output[:,0,:]
+        roberta_output = roberta_output[:,0,:] #all samples in batch : only CLS embedding : entire embedding dimension
       
         inputs = torch.cat((roberta_output, torch.t(exposure_duration.unsqueeze(0)), one_hot_encoding), 1)
         out = self.dnn(inputs)
         
-        return out
+        return out, roberta_output

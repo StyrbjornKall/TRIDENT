@@ -1,7 +1,6 @@
 import tqdm as tqdm
 import pickle as pkl
 import pandas as pd
-pd.options.mode.chained_assignment = None
 import numpy as np
 import random
 import requests
@@ -10,12 +9,10 @@ from typing import List, TypeVar
 
 import torch
 import torch.nn as nn
-from torch.utils.data import Dataset, TensorDataset, DataLoader, RandomSampler, SequentialSampler, WeightedRandomSampler
+from torch.utils.data import Dataset, DataLoader, SequentialSampler, WeightedRandomSampler
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import KFold
 
-import matplotlib.pyplot as plt
-from matplotlib_venn import venn2
 from collections import Counter
 
 from transformers import DataCollatorWithPadding
@@ -25,7 +22,6 @@ RDLogger.DisableLog('rdApp.*')
 
 PandasDataFrame = TypeVar('pandas.core.frame.DataFrame')
 PyTorchDataLoader = TypeVar('torch.utils.data.DataLoader')
-
 
 
 class Make_KFolds:
@@ -60,35 +56,41 @@ class BuildDataLoader_KFold:
     - SequentialSampler
     - WeightedRandomSampler (both with weights as 1/n and 1/sqrt(n))
     '''
-    def __init__(self, df: PandasDataFrame, folds: PandasDataFrame, fold_id: int, variables: List[str], label: str, batch_size: int, max_length: int, seed: int, tokenizer):
+    def __init__(self, df: PandasDataFrame, folds: PandasDataFrame, fold_id: int, wandb_config: dict, label: str, batch_size: int, max_length: int, seed: int, tokenizer):
         self.df = df
         self.bs = batch_size
         self.tokenizer = tokenizer
         self.max_len = max_length
-        self.variables = variables
+        self.config = wandb_config
+        self.variables = self.config.inputs
         self.label = label
         self.seed = seed
         self.folds = folds
-        self.collator = DataCollatorWithPadding(tokenizer=self.tokenizer, padding='longest', return_tensors='pt')
+        if self.tokenizer != None:
+            self.collator = DataCollatorWithPadding(tokenizer=self.tokenizer, padding='longest', return_tensors='pt')
+        else:
+            self.collator = None
         
-        self.train = df[df[self.variables[0]].isin(folds.SMILES[folds[f'fold_{fold_id}']==True])]
-        self.val = df[df[self.variables[0]].isin(folds.SMILES[folds[f'fold_{fold_id}']==False])]
+        self.train = df[df[self.config.smiles_col_name].isin(folds.SMILES[folds[f'fold_{fold_id}']==True])]
+        self.val = df[df[self.config.smiles_col_name].isin(folds.SMILES[folds[f'fold_{fold_id}']==False])]
         
-    def BuildDataset(self, df: PandasDataFrame) -> PandasDataFrame:
-        dataset = SMILES_dataset(df, self.variables, self.label, self.tokenizer, self.max_len)
+    def BuildDataset(self, df: PandasDataFrame):
+        if self.tokenizer != None:
+            dataset = SMILES_dataset(df, self.variables, self.label, self.tokenizer, self.max_len)
+        else:
+            dataset = CLS_dataset(df, self.variables, self.label)
         return dataset
 
 
-    def BuildTrainingLoader(self,  sampler_choice: str='WRS_sqrt', num_workers: int=0, weight_args: List[str]=None) -> PyTorchDataLoader:
+    def BuildTrainingLoader(self,  sampler_choice: str='WRS', num_workers: int=0, weight_args: List[str]=None) -> PyTorchDataLoader:
         '''
         weight_args: list defined in order [SMILES_col_name, effect_col_name, endpoint_col_name]
         '''
-        if weight_args == None or len(weight_args)<3:
+        if weight_args == None:
             # Builds only based on SMILES
-            counts = Counter(self.train[self.variables[0]])
-            weights = self.train[self.variables[0]].apply(lambda x: 1/counts[x]).tolist()
+            counts = Counter(self.train[self.config.smiles_col_name])
+            weights = self.train[self.config.smiles_col_name].apply(lambda x: 1/counts[x]).tolist()
         else:
-            # Builds based on all weight args
             counts = Counter(list(zip(self.train[weight_args[0]].tolist(), self.train[weight_args[1]].tolist(), self.train[weight_args[2]].tolist())))
             weights = 1/np.array([counts[i] for i in list(zip(self.train[weight_args[0]].tolist(), self.train[weight_args[1]].tolist(), self.train[weight_args[2]].tolist()))])
 
@@ -104,11 +106,11 @@ class BuildDataLoader_KFold:
         print(f'Built training dataloader with {len(dataset)} samples')
         return train_dataloader
 
-    def BuildValidationLoader(self, sampler_choice: str='SequentialSampler', num_workers: int=0) -> PyTorchDataLoader:
+    def BuildValidationLoader(self, sampler_choice: str, num_workers: int=0) -> PyTorchDataLoader:
         dataset = self.BuildDataset(self.val)
         if sampler_choice == 'WeightedRandomSampler':
-            counts = Counter(self.val[self.variables[0]])
-            weights = self.val[self.variables[0]].apply(lambda x: 1/counts[x]).tolist()
+            counts = Counter(self.val[self.config.smiles_col_name])
+            weights = self.val[self.config.smiles_col_name].apply(lambda x: 1/counts[x]).tolist()
             samples_weight = sum(counts.values())*torch.from_numpy(np.array(weights))
             sampler = WeightedRandomSampler(samples_weight, len(samples_weight), replacement = True)
         else:
@@ -132,6 +134,7 @@ class BuildDataLoader_KFold:
 
         return sets
 
+
 class BuildDataLoader_with_trainval_ratio:
     '''
     Class to build PyTorch Dataloader for training and validation sets. Does not support test set.
@@ -140,33 +143,42 @@ class BuildDataLoader_with_trainval_ratio:
     - SequentialSampler
     - WeightedRandomSampler (both with weights as 1/n and 1/sqrt(n))
     '''
-    def __init__(self, df: PandasDataFrame, variables: List[str], label: str, batch_size: int, max_length: int, seed: int, test_size: float, tokenizer):
+    def __init__(self, df: PandasDataFrame, wandb_config, label: str, batch_size: int, max_length: int, seed: int, test_size: float, tokenizer):
         self.df = df
         self.bs = batch_size
         self.tokenizer = tokenizer
         self.max_len = max_length
-        self.variables = variables
+        self.config = wandb_config
+        self.variables = self.config.inputs
         self.label = label
         self.seed = seed
-        self.collator = DataCollatorWithPadding(tokenizer=self.tokenizer, padding='longest', return_tensors='pt')
+        if self.tokenizer != None:
+            self.collator = DataCollatorWithPadding(tokenizer=self.tokenizer, padding='longest', return_tensors='pt')
+        else:
+            self.collator = None
 
-        self.train, self.val = train_test_split(df.SMILES.unique().tolist(), test_size=test_size, random_state=seed)
-        self.train = df[df.SMILES.isin(self.train)]
-        self.val = df[df.SMILES.isin(self.val)]
+        if test_size != 0:
+            self.train, self.val = train_test_split(df.SMILES.unique().tolist(), test_size=test_size, random_state=seed)
+            self.train = df[df.SMILES.isin(self.train)]
+            self.val = df[df.SMILES.isin(self.val)]
+        else:
+            self.train = self.df
         
-        
-    def BuildDataset(self, df: PandasDataFrame) -> PandasDataFrame:
-        dataset = SMILES_dataset(df, self.label, self.tokenizer)
+    def BuildDataset(self, df: PandasDataFrame):
+        if self.tokenizer != None:
+            dataset = SMILES_dataset(df, self.variables, self.label, self.tokenizer, self.max_len)
+        else:
+            dataset = CLS_dataset(df, self.variables, self.label)
         return dataset
 
     def BuildTrainingLoader(self,  sampler_choice: str='WRS', num_workers: int=0, weight_args: List[str]=None) -> PyTorchDataLoader:
         '''
         weight_args: list defined in order [SMILES_col_name, effect_col_name, endpoint_col_name]
         '''
-        if weight_args == None or len(weight_args)<3:
+        if weight_args == None:
             # Builds only based on SMILES
-            counts = Counter(self.train[self.variables[0]])
-            weights = self.train[self.variables[0]].apply(lambda x: 1/counts[x]).tolist()
+            counts = Counter(self.train[self.config.smiles_col_name])
+            weights = self.train[self.config.smiles_col_name].apply(lambda x: 1/counts[x]).tolist()
         else:
             counts = Counter(list(zip(self.train[weight_args[0]].tolist(), self.train[weight_args[1]].tolist(), self.train[weight_args[2]].tolist())))
             weights = 1/np.array([counts[i] for i in list(zip(self.train[weight_args[0]].tolist(), self.train[weight_args[1]].tolist(), self.train[weight_args[2]].tolist()))])
@@ -178,7 +190,7 @@ class BuildDataLoader_with_trainval_ratio:
         
         dataset = self.BuildDataset(self.train)
         sampler = WeightedRandomSampler(samples_weight, len(samples_weight), replacement = True)
-        train_dataloader = DataLoader(dataset, sampler=sampler, batch_size=self.bs, collate_fn=self.collator, num_workers=num_workers)
+        train_dataloader = DataLoader(dataset, sampler=sampler, batch_size=self.bs, num_workers=num_workers, collate_fn=self.collator)
 
         print(f'Built training dataloader with {len(dataset)} samples')
         return train_dataloader
@@ -186,14 +198,14 @@ class BuildDataLoader_with_trainval_ratio:
     def BuildValidationLoader(self, sampler_choice: str, num_workers: int=0) -> PyTorchDataLoader:
         dataset = self.BuildDataset(self.val)
         if sampler_choice == 'WeightedRandomSampler':
-            counts = Counter(self.val[self.variables[0]])
-            weights = self.val[self.variables[0]].apply(lambda x: 1/counts[x]).tolist()
+            counts = Counter(self.val[self.config.smiles_col_name])
+            weights = self.val[self.config.smiles_col_name].apply(lambda x: 1/counts[x]).tolist()
             samples_weight = sum(counts.values())*torch.from_numpy(np.array(weights))
             sampler = WeightedRandomSampler(samples_weight, len(samples_weight), replacement = True)
         else:
             sampler = SequentialSampler(dataset)
 
-        val_dataloader = DataLoader(dataset, sampler=sampler, batch_size=self.bs, collate_fn=self.collator, num_workers=num_workers)
+        val_dataloader = DataLoader(dataset, sampler=sampler, batch_size=self.bs, num_workers=num_workers, collate_fn=self.collator)
 
         print(f'Built validation dataloader with {len(dataset)} samples')
         return val_dataloader
@@ -214,7 +226,12 @@ class BuildDataLoader_with_trainval_ratio:
 
 class SMILES_dataset(Dataset):
     '''
-    Class for efficient loading of data for inference
+    Class for efficient loading of data
+
+    Expects variables to be defined in following order:
+    1. SMILES
+    2. Duration
+    3. Onehotencoding
     '''
     def __init__(self, df: PandasDataFrame, variables: List[str], label: str, tokenizer, max_len):
         self.df = df
@@ -238,3 +255,32 @@ class SMILES_dataset(Dataset):
         sample = {'input_ids': ids, 'attention_mask': mask, 'duration': dur, 'onehotenc': onehot, 'labels': labels}
 
         return sample
+
+class CLS_dataset(Dataset):
+    '''
+    Class for efficient loading of data
+
+    Expects variables to be defined in following order:
+    1. CLS_embeddings
+    2. Duration
+    3. Onehotencoding
+    '''
+    def __init__(self, df: PandasDataFrame, variables: List[str], label: str):
+        self.df = df
+        self.variables = variables
+        self.label = label
+
+    def __len__(self):
+        return len(self.df)
+
+    def __getitem__(self, idx):
+        row = self.df.iloc[idx]
+
+        cls_embedding = torch.tensor(row[self.variables[0]], dtype=torch.float32)
+        dur = torch.tensor(row[self.variables[1]], dtype=torch.float32)
+        onehot = torch.tensor(row[self.variables[2]], dtype=torch.float32)
+        labels = torch.tensor(row[self.label], dtype=torch.float32)
+        sample = {'cls_embedding': cls_embedding, 'duration': dur, 'onehotenc': onehot, 'labels': labels}
+
+        return sample
+
