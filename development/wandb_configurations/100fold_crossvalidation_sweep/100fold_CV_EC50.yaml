@@ -86,6 +86,8 @@ parameters:
     value: true
   save_model:
     value: true
+  save_final_epoch:
+    value: false
   seed:
     values:
       - 41

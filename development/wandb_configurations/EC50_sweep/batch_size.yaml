@@ -73,6 +73,10 @@ parameters:
     value: WRS_sqrt
   save_results:
     value: false
+  save_model:
+    value: false
+  save_final_epoch:
+    value: false
   seed:
     values:
       - 42
