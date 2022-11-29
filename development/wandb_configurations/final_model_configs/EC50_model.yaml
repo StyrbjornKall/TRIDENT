@@ -90,7 +90,6 @@ sampling_procedure:
 seed:
   desc: null
   value: 42
-smiles
 species_classes:
   desc: null
   value: []
