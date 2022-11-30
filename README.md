@@ -1,11 +1,11 @@
-# fishbAITe - fish based AI Toxicity engine
+# fishbAIT - fish based AI Toxicity
 ![fishbAITe model architecture](final_model.svg)
 ## Overview
 This repository contains all code and data necessary to replicate the results presented in the publication L!.
 
 ## How to Use
 The models in this repository can also be used directly through our online web application:
-[fishbAITe](https://new-fishbait-app.herokuapp.com/)
+[fishbAIT](https://fishbait.streamlit.app/)
 
 For very extensive predictions (>100 MB) consider cloning this repo and follow the tutorials under `tutorials`.
 
@@ -22,8 +22,6 @@ git clone https://github.com/StyrbjornKall/fishbAIT
 `fishbAIT` houses the fine-tuned model parameters
 
 `tutorials` contains tutorial notebooks for running inference using the fine-tuned models.
-
-`utils` contains necessary utility scripts in order to run both the scripts in `development` and `tutorials`.
 
 # License Information
 
