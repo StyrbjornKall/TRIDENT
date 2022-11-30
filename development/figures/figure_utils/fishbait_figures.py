@@ -17,8 +17,9 @@ from sklearn.preprocessing import StandardScaler
 
 
 ## CHEMBERTA AND LOSS FUNCTION COMPARISON (FROM SWEEP)
-def PlotBaseModelLossfunResultsRDKit(savepath):
-    df = pd.read_csv('C:/Users/skall/OneDrive - Chalmers/Documents/Ecotoxformer/results/basemodel_sweep_results_5x_CV.csv')
+def PlotBaseModelLossfunResults(savepath):
+
+    df = pd.read_csv('../../data/results/basemodel_sweep_results_5x_CV_RDkit.zip', compression='zip')
 
     fig = go.Figure()
 
@@ -75,7 +76,7 @@ def PlotBaseModelLossfunResultsRDKit(savepath):
 
 
 ## RESIDUAL HISTOGRAM ONE PER SMILES
-def Plot100FoldResidualHistUsingAvgPreds(savepath, name, endpoint):
+def PlotKFoldResidualHistUsingWAvgPreds(savepath, name, endpoint):
 
     predictions = GroupDataForPerformance(Preprocess10x10Fold(name=name))
     residuals = predictions.residuals
@@ -129,8 +130,8 @@ def Plot100FoldResidualHistUsingAvgPreds(savepath, name, endpoint):
         ec10_predictions = GroupDataForPerformance(Preprocess10x10Fold(name='EC10'))
         combo_predictions = GroupDataForPerformance(Preprocess10x10Fold(name=name))
         
-        ec50residuals = predictions[(combo_predictions.COMBINED_endpoint=='EC50') & (combo_predictions.SMILES.isin(ec50_predictions.SMILES))].residuals
-        ec10residuals = predictions[(combo_predictions.COMBINED_endpoint=='EC10') & (combo_predictions.SMILES.isin(ec10_predictions.SMILES))].residuals
+        ec50residuals = predictions[(combo_predictions.endpoint=='EC50') & (combo_predictions.SMILES.isin(ec50_predictions.SMILES))].residuals
+        ec10residuals = predictions[(combo_predictions.endpoint=='EC10') & (combo_predictions.SMILES.isin(ec10_predictions.SMILES))].residuals
 
         fig = make_subplots(rows=1, cols=1,
         subplot_titles=(['Residual distribution']),
@@ -211,7 +212,7 @@ def Plot100FoldResidualHistUsingAvgPreds(savepath, name, endpoint):
 
 
 ## BARPLOT PERFORMANCE SINGLE MODELS (M50, M10)
-def Plot100FoldSingleBarUsingAvgPreds(savepath):
+def PlotKFoldSingleBarUsingWAvgPreds(savepath):
 
     errors=['Mean', 'Median']
     names = ['EC50','EC10']
@@ -249,7 +250,7 @@ def Plot100FoldSingleBarUsingAvgPreds(savepath):
         fig.write_html(savepath+'.html')
 
 ## BARPLOT PERFORMANCE COMBOMODEL (M50/10)
-def Plot100FoldComboBarUsingAvgPreds(savepath, combomodel):
+def PlotKFoldComboBarUsingWAvgPreds(savepath, combomodel):
 
     fig = go.Figure()
 
@@ -268,7 +269,7 @@ def Plot100FoldComboBarUsingAvgPreds(savepath, combomodel):
         qsar += [mean_L1, median_L1]
         qsarse += [se, MAD]
         combo_predictions = GroupDataForPerformance(Preprocess10x10Fold(name=combomodel))
-        combo_predictions = combo_predictions[(combo_predictions.COMBINED_endpoint==name) & (combo_predictions.SMILES.isin(single_predictions.SMILES))]
+        combo_predictions = combo_predictions[(combo_predictions.endpoint==name) & (combo_predictions.SMILES.isin(single_predictions.SMILES))]
         _, mean_L1, median_L1, se, MAD = combo_predictions.residuals, combo_predictions.L1error.mean(), combo_predictions.L1error.median(), combo_predictions.L1error.sem(), (abs(combo_predictions.L1error-combo_predictions.L1error.median())).median()/np.sqrt(len(combo_predictions))
         ecotoxformer += [mean_L1, median_L1]
         ecotoxformerse += [se, MAD]
@@ -314,15 +315,15 @@ def Plot100FoldComboBarUsingAvgPreds(savepath, combomodel):
     
 
 ## PRINCIPAL COMPONENT ANALYSIS (PCA)
-def PlotPCA_CLSProjection(savepath, endpoint, rdkit, flipaxis):
+def PlotPCA_CLSProjection(savepath, endpoint, flipaxis):
     if endpoint == 'EC50':
-        results = pd.read_csv('C:/Users/skall/OneDrive - Chalmers/Documents/Ecotoxformer/results/wandb_results/'+f'EC50_final_model_training_data{rdkit}.csv')
+        results = pd.read_csv('../../data/results/EC50_final_model_training_data_RDkit.zip', compression='zip')
     elif endpoint == 'EC10':
-        results = pd.read_csv('C:/Users/skall/OneDrive - Chalmers/Documents/Ecotoxformer/results/wandb_results/'+f'EC10_final_model_training_data{rdkit}.csv')
+        results = pd.read_csv('../../data/results/EC10_final_model_training_data_RDkit.zip', compression='zip')
     elif endpoint == 'EC50EC10':
-        results = pd.read_csv('C:/Users/skall/OneDrive - Chalmers/Documents/Ecotoxformer/results/wandb_results/'+f'EC50EC10_final_model_training_data{rdkit}.csv')
+        results = pd.read_csv('../../data/results/EC50EC10_final_model_training_data_RDkit.zip', compression='zip')
 
-    results['labels'] = results['COMBINED_mgperL']
+    results['labels'] = results['mgperL']
     CLS_dict = dict(zip(results.SMILES_Canonical_RDKit, results.CLS_embeddings.tolist()))
 
     results.drop(columns=['CLS_embeddings'], inplace=True)
@@ -332,10 +333,7 @@ def PlotPCA_CLSProjection(savepath, endpoint, rdkit, flipaxis):
     results['L1Error'] = results.residuals.abs()
     results['CLS_embeddings'] = results.SMILES_Canonical_RDKit.apply(lambda x: CLS_dict[x])
 
-    if rdkit == 'rdkit':
-        col = 'SMILES_Canonical_RDKit'
-    else:
-        col = 'SMILES'
+    col = 'SMILES_Canonical_RDKit'
 
     results.CLS_embeddings = results.CLS_embeddings.apply(lambda x: json.loads(x))
     embeddings = np.array(results.CLS_embeddings.tolist())
@@ -374,15 +372,13 @@ def PlotPCA_CLSProjection(savepath, endpoint, rdkit, flipaxis):
                                         title='mg/L',
                                         tickvals=[2,0,-2,-4],
                                         ticktext=["10<sup>2</sup>", "10<sup>0</sup>", "10<sup>-2</sup>", "<10<sup>-4</sup>"]),
-                                    #line_width=1,
-                                    #line_color='Black'
                                     )),
                         row=1, col=1)
 
     else:
         # Combo model
-        ec50 = results[results.COMBINED_endpoint=='EC50']
-        ec10 = results[results.COMBINED_endpoint=='EC10']
+        ec50 = results[results.endpoint=='EC50']
+        ec10 = results[results.endpoint=='EC10']
         fig.add_trace(go.Scatter(x=ec50.pc1, y=ec50.pc2, 
                         mode='markers',
                         text=hover,
@@ -428,23 +424,23 @@ def PlotPCA_CLSProjection(savepath, endpoint, rdkit, flipaxis):
     fig.show(renderer = 'png')
 
     if savepath != None:
-        fig.write_image(savepath+f'{rdkit}.png', scale=7)
-        fig.write_image(savepath+f'{rdkit}.svg')
-        fig.write_html(savepath+f'{rdkit}.html')
+        fig.write_image(savepath+'.png', scale=7)
+        fig.write_image(savepath+'.svg')
+        fig.write_html(savepath+'.html')
 
 
 ## QSAR COMPARISON INTERSECTION OF APPLICABILITY DOMAINS
-def PlotQSARcompBarUsingWeightedAvgPredsInterersect(savepath, weightedavgpreds, endpoint):
+def PlotQSARcompBarUsingWAvgPredsInterersect(savepath, predictions, endpoint):
 
     fig = go.Figure()
     xgroups  = ['Mean','Median']
     QSARs = ['ECOSAR','VEGA','TEST']
 
     if endpoint == 'EC50':
-        intersect = weightedavgpreds[~((weightedavgpreds.ECOSAR.isna() | weightedavgpreds.VEGA.isna()) | weightedavgpreds.TEST.isna())]
+        intersect = predictions[~((predictions.ECOSAR.isna() | predictions.VEGA.isna()) | predictions.TEST.isna())]
         print(intersect.shape)
     else:
-        intersect = weightedavgpreds[~(weightedavgpreds.ECOSAR.isna() | weightedavgpreds.VEGA.isna())]
+        intersect = predictions[~(predictions.ECOSAR.isna() | predictions.VEGA.isna())]
         print(intersect.shape)
     L1Error = abs(intersect.residuals)
     mean_L1_model, median_L1_model, se_model, MAD_model = L1Error.mean(), L1Error.median(), L1Error.sem(), (abs(L1Error-L1Error.median())).median()/np.sqrt(len(L1Error))
@@ -492,8 +488,9 @@ def PlotQSARcompBarUsingWeightedAvgPredsInterersect(savepath, weightedavgpreds, 
         fig.write_image(savepath+'.svg')
         fig.write_html(savepath+'.html')
 
+
 ## QSAR COMPARISON RESIDUAL SCATTER PLOT
-def Plot100FoldResidualScatter(savepath, avg_predictions, endpoint):
+def PlotQSARresidualScatter(savepath, predictions, endpoint):
 
     models = ['fishbAIT', 'ECOSAR','VEGA','TEST']
 
@@ -501,14 +498,14 @@ def Plot100FoldResidualScatter(savepath, avg_predictions, endpoint):
     cols = [1,2,1,2]
     fig = make_subplots(rows=2, cols=2,
     subplot_titles=(
-    f'fishbAIT n={len(avg_predictions)}', 
-    f'ECOSAR n={len(avg_predictions["ECOSAR"].dropna())}', 
-    f'VEGA n={len(avg_predictions["VEGA"].dropna())}',
-    f'TEST n={len(avg_predictions["TEST"].dropna())}'), shared_yaxes=True, shared_xaxes=True,
+    f'fishbAIT n={len(predictions)}', 
+    f'ECOSAR n={len(predictions["ECOSAR"].dropna())}', 
+    f'VEGA n={len(predictions["VEGA"].dropna())}',
+    f'TEST n={len(predictions["TEST"].dropna())}'), shared_yaxes=True, shared_xaxes=True,
     horizontal_spacing=0.05, vertical_spacing=0.1)
 
     for i, model in enumerate(models):
-        tmp_df = avg_predictions[~avg_predictions[model].isna()]
+        tmp_df = predictions[~predictions[model].isna()]
 
         if model != 'fishbAIT':
             residuals = tmp_df[f'{model}_residuals']
@@ -553,7 +550,7 @@ def Plot100FoldResidualScatter(savepath, avg_predictions, endpoint):
 
 
 ## QSAR COMPARISON RESIDUAL SCATTER PLOT
-def Plot100FoldResidualScatterIntersect(savepath, avg_predictions, endpoint):
+def PlotQSARresidualScatterIntersect(savepath, predictions, endpoint):
 
     models = ['fishbAIT', 'ECOSAR','VEGA','TEST']
 
@@ -561,23 +558,23 @@ def Plot100FoldResidualScatterIntersect(savepath, avg_predictions, endpoint):
     cols = [1,2,1,2]
 
     if endpoint == 'EC50':
-        avg_predictions = avg_predictions[~((avg_predictions.ECOSAR.isna() | avg_predictions.VEGA.isna()) | avg_predictions.TEST.isna())]
-        print(avg_predictions.shape)
+        predictions = predictions[~((predictions.ECOSAR.isna() | predictions.VEGA.isna()) | predictions.TEST.isna())]
+        print(predictions.shape)
     else:
-        avg_predictions = avg_predictions[~(avg_predictions.ECOSAR.isna() | avg_predictions.VEGA.isna())]
-        print(avg_predictions.shape)
-    L1Error = abs(avg_predictions.residuals)
+        predictions = predictions[~(predictions.ECOSAR.isna() | predictions.VEGA.isna())]
+        print(predictions.shape)
+    L1Error = abs(predictions.residuals)
 
     fig = make_subplots(rows=2, cols=2,
     subplot_titles=(
-    f'fishbAIT n={len(avg_predictions)}', 
-    f'ECOSAR n={len(avg_predictions["ECOSAR"].dropna())}', 
-    f'VEGA n={len(avg_predictions["VEGA"].dropna())}',
-    f'TEST n={len(avg_predictions["TEST"].dropna())}'), shared_yaxes=True, shared_xaxes=True,
+    f'fishbAIT n={len(predictions)}', 
+    f'ECOSAR n={len(predictions["ECOSAR"].dropna())}', 
+    f'VEGA n={len(predictions["VEGA"].dropna())}',
+    f'TEST n={len(predictions["TEST"].dropna())}'), shared_yaxes=True, shared_xaxes=True,
     horizontal_spacing=0.05, vertical_spacing=0.1)
 
     for i, model in enumerate(models):
-        tmp_df = avg_predictions[~avg_predictions[model].isna()]
+        tmp_df = predictions[~predictions[model].isna()]
 
         if model != 'fishbAIT':
             residuals = tmp_df[f'{model}_residuals']
@@ -621,22 +618,22 @@ def Plot100FoldResidualScatterIntersect(savepath, avg_predictions, endpoint):
 
 
 ## QSAR COMPARISON PREDICTIONS VS. LABELS SCATTER
-def PlotQSARcompScatter(savepath, avg_predictions, endpoint):
+def PlotQSARcompScatter(savepath, predictions, endpoint):
     models = ['fishbAIT', 'ECOSAR','VEGA','TEST']
 
     rows = [1,1,2,2]
     cols = [1,2,1,2]
     fig = make_subplots(rows=2, cols=2,
     subplot_titles=(
-    f'fishbAIT n={len(avg_predictions)}', 
-    f'ECOSAR n={len(avg_predictions["ECOSAR"].dropna())}', 
-    f'VEGA n={len(avg_predictions["VEGA"].dropna())}',
-    f'TEST n={len(avg_predictions["TEST"].dropna())}'), shared_yaxes=True, shared_xaxes=True,
+    f'fishbAIT n={len(predictions)}', 
+    f'ECOSAR n={len(predictions["ECOSAR"].dropna())}', 
+    f'VEGA n={len(predictions["VEGA"].dropna())}',
+    f'TEST n={len(predictions["TEST"].dropna())}'), shared_yaxes=True, shared_xaxes=True,
     horizontal_spacing=0.05, vertical_spacing=0.1)
 
 
     for i, model in enumerate(models):
-        tmp_df = avg_predictions[~avg_predictions[model].isna()]
+        tmp_df = predictions[~predictions[model].isna()]
         X = tmp_df.labels.to_numpy()
         Y = tmp_df[model].to_numpy()
         try:
@@ -686,7 +683,7 @@ def PlotQSARcompScatter(savepath, avg_predictions, endpoint):
 
 
 ## QSAR COVERAGE/APPLICABILITY (INCLUDING EXPERIMENTAL/TRAINING) DATA
-def MakeQSARCoverageComboBar(savepath, inside_AD):
+def PlotQSARCoverageComboBar(savepath, inside_AD):
     if inside_AD:
         AD='AD'
     else:
@@ -707,10 +704,10 @@ def MakeQSARCoverageComboBar(savepath, inside_AD):
         ecosmiles = ECOSAR_tmp.original_SMILES[ECOSAR_tmp.original_SMILES.isin(all_smiles)]
         vegasmiles = VEGA_tmp.original_SMILES[VEGA_tmp.original_SMILES.isin(all_smiles)]
 
-        avg_predictions.SMILES.drop_duplicates().to_csv(f'C:/Users/skall/OneDrive - Chalmers/Documents/Ecotoxformer/Data/all_smiles_{endpoint}.txt', header=None, index=None, sep='\n', mode='w')
-        ecosmiles.drop_duplicates().to_csv(f'C:/Users/skall/OneDrive - Chalmers/Documents/Ecotoxformer/Data/ecosar_smiles_{endpoint}_{AD}.txt', header=None, index=None, sep='\n', mode='w')
-        testsmiles.drop_duplicates().to_csv(f'C:/Users/skall/OneDrive - Chalmers/Documents/Ecotoxformer/Data/test_smiles_{endpoint}_{AD}.txt',  header=None, index=None, sep='\n', mode='w')
-        vegasmiles.drop_duplicates().to_csv(f'C:/Users/skall/OneDrive - Chalmers/Documents/Ecotoxformer/Data/vega_smiles_{endpoint}_{AD}.txt',  header=None, index=None, sep='\n', mode='w')
+        avg_predictions.SMILES.drop_duplicates().to_csv(f'../../data/results/all_smiles_{endpoint}_for_venn.txt', header=None, index=None, sep='\n', mode='w')
+        ecosmiles.drop_duplicates().to_csv(f'../../data/results/ecosar_smiles_{endpoint}_{AD}_for_venn.txt', header=None, index=None, sep='\n', mode='w')
+        testsmiles.drop_duplicates().to_csv(f'../../data/results/test_smiles_{endpoint}_{AD}_for_venn.txt',  header=None, index=None, sep='\n', mode='w')
+        vegasmiles.drop_duplicates().to_csv(f'../../data/results/vega_smiles_{endpoint}_{AD}_for_venn.txt',  header=None, index=None, sep='\n', mode='w')
 
     
         models = [all_smiles, ecosmiles, vegasmiles, testsmiles]

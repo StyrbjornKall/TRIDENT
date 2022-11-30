@@ -7,23 +7,23 @@ import numpy as np
 ## LOAD QSAR TOOL DATASETS
 def LoadQSAR(endpoint):    
     if endpoint == 'EC50':
-        VEGA = pd.read_csv('C:/Users/skall/OneDrive - Chalmers/Documents/Ecotoxformer/Data/test_vega/VEGA_fish_EC50.csv')
-        ECOSAR = pd.read_excel('C:/Users/skall/OneDrive - Chalmers/Documents/Ecotoxformer/Data/ecosar/ECOSAR_SMILES_fish_LD50_min.xlsx')
-        TEST = pd.read_csv('C:/Users/skall/OneDrive - Chalmers/Documents/Ecotoxformer/Data/test_vega/TEST.csv')
+        VEGA = pd.read_csv('../../data/results/VEGA_fish_EC50.zip', compression='zip')
+        ECOSAR = pd.read_csv('../../data/results/ECOSAR_SMILES_fish_LD50_min.zip', compression='zip')
+        TEST = pd.read_csv('../../data/results/TEST.zip', compression='zip')
         ECOSAR = ECOSAR[(ECOSAR.Duration == '96h')]
     elif endpoint == 'EC10':
-        VEGA = pd.read_csv('C:/Users/skall/OneDrive - Chalmers/Documents/Ecotoxformer/Data/test_vega/VEGA_fish_NOEC.csv')
-        ECOSAR = pd.read_excel('C:/Users/skall/OneDrive - Chalmers/Documents/Ecotoxformer/Data/ecosar/ECOSAR_SMILES_fish_ChV_min.xlsx')
+        VEGA = pd.read_csv('../../data/results/VEGA_fish_NOEC.zip', compression='zip')
+        ECOSAR = pd.read_csv('../../data/results/ECOSAR_SMILES_fish_ChV_min.zip', compression='zip')
         ECOSAR['Concentration (mg/L)'] = ECOSAR['Concentration (mg/L)']/np.sqrt(2)
         TEST = VEGA.copy()[0:0]
     elif endpoint == 'EC50EC10':
-        VEGA_ec10 = pd.read_csv('C:/Users/skall/OneDrive - Chalmers/Documents/Ecotoxformer/Data/test_vega/VEGA_fish_NOEC.csv')
-        ECOSAR_ec10 = pd.read_excel('C:/Users/skall/OneDrive - Chalmers/Documents/Ecotoxformer/Data/ecosar/ECOSAR_SMILES_fish_ChV_min.xlsx')
+        VEGA_ec10 = pd.read_csv('../../data/results/VEGA_fish_NOEC.zip', compression='zip')
+        ECOSAR_ec10 = pd.read_excel('../../data/results/ECOSAR_SMILES_fish_ChV_min.zip', compression='zip')
         ECOSAR_ec10['Concentration (mg/L)'] = ECOSAR_ec10['Concentration (mg/L)']/np.sqrt(2)
-        VEGA_ec50 = pd.read_csv('C:/Users/skall/OneDrive - Chalmers/Documents/Ecotoxformer/Data/test_vega/VEGA_fish_EC50.csv')
-        ECOSAR_ec50 = pd.read_excel('C:/Users/skall/OneDrive - Chalmers/Documents/Ecotoxformer/Data/ecosar/ECOSAR_SMILES_fish_LD50_min.xlsx')
+        VEGA_ec50 = pd.read_csv('../../data/results/VEGA_fish_EC50.zip', compression='zip')
+        ECOSAR_ec50 = pd.read_csv('../../data/results/ECOSAR_SMILES_fish_LD50_min.zip', compression='zip')
         ECOSAR_ec50 = ECOSAR_ec50[(ECOSAR_ec50.Duration == '96h')]
-        TEST = pd.read_csv('C:/Users/skall/OneDrive - Chalmers/Documents/Ecotoxformer/Data/test_vega/TEST.csv')
+        TEST = pd.read_csv('../../data/results/TEST.zip', compression='zip')
         ECOSAR = pd.concat([ECOSAR_ec10,ECOSAR_ec50], axis=0)
         VEGA = pd.concat([VEGA_ec10,VEGA_ec50], axis=0)
         del [ECOSAR_ec10, ECOSAR_ec50, VEGA_ec10, VEGA_ec50]
@@ -85,12 +85,12 @@ def MatchQSAR(df, ECOSAR_dict, TEST_dict, VEGA_dict, endpoint: str, duration: st
             return None
         
     try:
-        df['CAS'] = df.COMBINED_CAS.apply(lambda x: x.replace('-','')).astype(int)
+        df['CAS'] = df.CAS.apply(lambda x: x.replace('-','')).astype(int)
     except:
         pass
 
     if endpoint == 'EC50':
-        df = df[df.COMBINED_Duration_Value == 96]
+        df = df[df.Duration_Value == 96]
     elif endpoint in ['EC10', 'NOEC', 'ChV']:
         df = DurationBinner(df, [170, 680, np.Inf])
         df = df[df.Duration_Value_binned.isin(duration)]
@@ -107,7 +107,7 @@ def MatchQSAR(df, ECOSAR_dict, TEST_dict, VEGA_dict, endpoint: str, duration: st
 def RemoveOutOfAD(df, QSAR_type: str):
     if QSAR_type == 'ECOSAR':
         tmp = len(df)
-        should_not_profile = pd.read_excel('C:/Users/skall/OneDrive - Chalmers/Documents/Ecotoxformer/Data/ecosar/should_not_be_profiled.xlsx')
+        should_not_profile = pd.read_csv('../../data/results/ECOSAR_v2.0_CAS_outside_AD.zip', compression='zip')
         df = df[(~df.CAS.isin(should_not_profile.CAS) & (df.Alert.isin([' '])) | df.Alert.isin(['  AcuteToChronicRatios', '  SaturateSolublity']))]
         print(f'Removed {tmp-len(df)} rows')
         return df
@@ -123,7 +123,7 @@ def RemoveOutOfAD(df, QSAR_type: str):
 ## REMOVE EXPERIMENTAL VALUES (TRAINING SET)
 def RemoveExperimentalData(df, QSAR_type: str):
     if QSAR_type == 'ECOSAR':
-        experimental_ecosar = pd.read_csv('C:/Users/skall/OneDrive - Chalmers/Documents/Ecotoxformer/Data/ecosar/Experimental_CAS_ECOSAR_v2.2.csv')
+        experimental_ecosar = pd.read_csv('../../data/results/ECOSAR_v2.2_CAS_experimental.zip', compression='zip')
         df = df[~df.CAS.isin(experimental_ecosar.ECOSAR_experimental_CAS.tolist())]
     elif QSAR_type == 'TEST':
         experimental_smiles = df[df.reliability == 'EXPERIMENTAL'].original_SMILES.unique().tolist()
