@@ -2,12 +2,12 @@
 development/figures/figures_for_publication/EC50/*.svg
 development/figures/figures_for_publication/EC50/*.png
 development/figures/figures_for_publication/EC50/*.html
-development/figures/figures_for_publication/EC50/*.svg
-development/figures/figures_for_publication/EC50/*.png
-development/figures/figures_for_publication/EC50/*.html
-development/figures/figures_for_publication/EC50/*.svg
-development/figures/figures_for_publication/EC50/*.png
-development/figures/figures_for_publication/EC50/*.html
+development/figures/figures_for_publication/EC10/*.svg
+development/figures/figures_for_publication/EC10/*.png
+development/figures/figures_for_publication/EC10/*.html
+development/figures/figures_for_publication/EC50EC10/*.svg
+development/figures/figures_for_publication/EC50EC10/*.png
+development/figures/figures_for_publication/EC50EC10/*.html
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
