@@ -212,13 +212,14 @@ def PlotKFoldResidualHistUsingWAvgPreds(savepath, name, endpoint):
 
 
 ## BARPLOT PERFORMANCE SINGLE MODELS (M50, M10)
-def PlotKFoldSingleBarUsingWAvgPreds(savepath):
+def PlotKFoldSingleBarUsingWAvgPreds(savepath, ec50_name, ec10_name):
 
     errors=['Mean', 'Median']
-    names = ['EC50','EC10']
+    names = [ec50_name,ec10_name]
+    colnames = ['EC50','EC10']
     fig = go.Figure()
 
-    for name in names:
+    for i, name in enumerate(names):
         predictions = GroupDataForPerformance(Preprocess10x10Fold(name=name, uselogdata=True))
         _, mean_L1, median_L1, se, MAD = predictions.residuals, predictions.L1error.mean(), predictions.L1error.median(), predictions.L1error.sem(), (abs(predictions.L1error-predictions.L1error.median())).median()/np.sqrt(len(predictions))
 
@@ -229,7 +230,7 @@ def PlotKFoldSingleBarUsingWAvgPreds(savepath):
             symmetric=False,
             array=[10**mean_L1*(10**se-1),10**median_L1*(10**MAD-1)],
             arrayminus=[10**mean_L1*(1-10**-se), 10**median_L1*(1-10**-MAD)]),
-            marker_color=colors[name],
+            marker_color=colors[colnames[i]],
             marker=dict(line_width=1,
             line_color='Black')
         ))
@@ -239,7 +240,7 @@ def PlotKFoldSingleBarUsingWAvgPreds(savepath):
     fig.update_yaxes(title_text="Absolute Prediction Error (fold change)")
 
     fig.update_layout(barmode='group')
-    UpdateFigLayout(fig, None, [1,6],[1000,700],1, 'topright')
+    UpdateFigLayout(fig, None, [1,10],[1000,700],1, 'topright')
 
     
     fig.show(renderer='png')

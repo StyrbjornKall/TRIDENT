@@ -7,6 +7,16 @@ ec50 = '#e0ecf4'
 ec10 = '#9ebcda'
 ec50ec10 = '#8856a7'
 
+# invertebrates
+#fff7bc
+#fec44f
+# algae
+#f7fcb9
+#addd8e
+# fish
+#e0ecf4
+#9ebcda
+
 FONT = 'Serif'
 FONTSIZE = 30
 
