@@ -10,7 +10,7 @@ development/figures/figures_for_publication/EC50EC10/*.png
 development/figures/figures_for_publication/EC50EC10/*.html
 
 # Byte-compiled / optimized / DLL files
-**__pycache__/
+*__pycache__/
 *.py[cod]
 *$py.class
 
