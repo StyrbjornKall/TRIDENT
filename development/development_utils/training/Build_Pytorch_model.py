@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from typing import List
+import numpy as np
 
 
 def GPUinfo(device):
