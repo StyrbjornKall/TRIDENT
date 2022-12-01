@@ -8,6 +8,9 @@ development/figures/figures_for_publication/EC10/*.html
 development/figures/figures_for_publication/EC50EC10/*.svg
 development/figures/figures_for_publication/EC50EC10/*.png
 development/figures/figures_for_publication/EC50EC10/*.html
+development/figures/figures_for_publication/*.svg
+development/figures/figures_for_publication/*.png
+development/figures/figures_for_publication/*.html
 
 # Byte-compiled / optimized / DLL files
 *__pycache__/
