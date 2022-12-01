@@ -1,7 +1,13 @@
 # Repo specific
-development/figures/figures_for_publication/*.svg
-development/figures/figures_for_publication/*.png
-development/figures/figures_for_publication/*.html
+development/figures/figures_for_publication/EC50/*.svg
+development/figures/figures_for_publication/EC50/*.png
+development/figures/figures_for_publication/EC50/*.html
+development/figures/figures_for_publication/EC50/*.svg
+development/figures/figures_for_publication/EC50/*.png
+development/figures/figures_for_publication/EC50/*.html
+development/figures/figures_for_publication/EC50/*.svg
+development/figures/figures_for_publication/EC50/*.png
+development/figures/figures_for_publication/EC50/*.html
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
