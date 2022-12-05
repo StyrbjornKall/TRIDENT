@@ -55,13 +55,13 @@ parameters:
   inputs:
     value:
       - SMILES_Canonical_RDKit
-      - COMBINED_Duration_Value
+      - Duration_Value
       - OneHotEnc_concatenated
   k_folds:
     values:
       - 10
   label:
-    value: COMBINED_mgperL
+    value: mgperL
   layer_1:
     values:
       - 700

@@ -46,11 +46,11 @@ inputs:
   desc: null
   value:
   - SMILES_Canonical_RDKit
-  - COMBINED_Duration_Value
+  - Duration_Value
   - OneHotEnc_concatenated
 label:
   desc: null
-  value: COMBINED_mgperL
+  value: mgperL
 log_data:
   desc: null
   value: true
@@ -82,8 +82,8 @@ sampler_weight_args:
   desc: null
   value:
   - SMILES_Canonical_RDKit
-  - COMBINED_effect
-  - COMBINED_endpoint
+  - effect
+  - endpoint
 sampling_procedure:
   desc: null
   value: WRS_sqrt
