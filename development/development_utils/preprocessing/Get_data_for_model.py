@@ -11,6 +11,10 @@ from typing import List
 from rdkit import Chem, RDLogger
 RDLogger.DisableLog('rdApp.*')
 
+import os
+__location__ = os.path.realpath(
+    os.path.join(os.getcwd(), os.path.dirname(__file__)))
+
 
 # Get data for model contains functions for data preprocessing in order to train a transformer model for ecotoxicity prediction.
 # These utils functions are imported and used in the main script.
@@ -190,7 +194,7 @@ class PreprocessData():
         If this does not succeed, raises error and asks for permission to download from pubchem.
         '''
         try:
-            dict_of_SMILES = pkl.load(open('dict_of_SMILES_and_CID', 'rb'))
+            dict_of_SMILES = pkl.load(open(os.path.join(__location__, 'dict_of_SMILES_and_CID'), 'rb'))
         
         except OSError:
             print('Could not load dictionary.') 
@@ -204,7 +208,7 @@ class PreprocessData():
                     dict_of_SMILES[smile] = self.__GetCID(smile)
 
                 self.dataframe['Pubchem_CID'] = self.dataframe.SMILES.apply(lambda x: dict_of_SMILES[x])
-                pkl.dump(dict_of_SMILES, open('dict_of_SMILES_and_CID', 'wb'))
+                pkl.dump(dict_of_SMILES, open(os.path.join(__location__, 'dict_of_SMILES_and_CID'), 'wb'))
 
         self.dataframe = self.dataframe.reset_index().drop(columns='index', axis=1)
         CID_list = np.zeros(len(self.dataframe)).astype(int)
@@ -255,7 +259,8 @@ class PreprocessData():
         '''
         Retrieves additional metadata by pubchem ID.
         '''
-        metadata = pd.read_csv('Pubchem_metadata.csv')
+        metadata = pd.read_csv(os.path.join(__location__, 'Pubchem_metadata.csv'))
+        self.dataframe.drop(columns=list(set(metadata.columns)&set(self.dataframe.columns)), inplace=True)
         merged = pd.merge(self.dataframe, metadata, left_on='Pubchem_CID', right_on='cid')
 
         merged = merged[self.dataframe.columns.tolist()+list_of_metadata] if list_of_metadata[0] != 'all' else merged
