@@ -1,6 +1,6 @@
+# fishbAIT - fish based AI Toxicity
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-# fishbAIT - fish based AI Toxicity
 ![fishbAITe model architecture](final_model.svg)
 ## Overview
 This repository contains all code and data necessary to replicate the results presented in the publication L!.
