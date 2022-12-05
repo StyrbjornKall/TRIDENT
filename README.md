@@ -16,11 +16,29 @@ Clone this repository:
 git clone https://github.com/StyrbjornKall/fishbAIT
 ```
 
+## Dependencies
+
+`fishbait_development.yml` and `fishbait_development.txt`
+Contains all packages required to reproduce this study:
+```bash
+conda env create -f fishbait_development.yml
+
+pip install fishbait_development.txt
+```
+
+`fishbait_inference.yml` and `fishbait_inference.txt`
+Contains only the packages required for making predictions using the fine-tuned models and skips development-only packages:
+```bash
+conda env create -f fishbait_inference.yml
+
+pip install fishbait_inference.txt
+```
+
 ## Layout
 `data` contains all preprocessed data used for training our fine-tuned EC50, EC10 and combined model.
 
-`development` contains all code used to replicate the findings presented in the publication.
+`development` contains all code needed to replicate the findings presented in the publication.
 
-`fishbAIT` houses the fine-tuned model parameters
+`fishbAIT` houses the fine-tuned model weigths.
 
 `tutorials` contains tutorial notebooks for running inference using the fine-tuned models.
