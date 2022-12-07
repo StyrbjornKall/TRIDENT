@@ -21,17 +21,13 @@ git clone https://github.com/StyrbjornKall/fishbAIT
 `fishbait_development.yml` and `fishbait_development.txt`
 Contains all packages required to reproduce this study:
 ```bash
-conda env create -f fishbait_development.yml
-
-pip install fishbait_development.txt
+conda env create -f fishbait_development_environment.yml
 ```
 
 `fishbait_inference.yml` and `fishbait_inference.txt`
 Contains only the packages required for making predictions using the fine-tuned models and skips development-only packages:
 ```bash
-conda env create -f fishbait_inference.yml
-
-pip install fishbait_inference.txt
+conda env create -f fishbait_inference_environment.yml
 ```
 
 ## Layout
