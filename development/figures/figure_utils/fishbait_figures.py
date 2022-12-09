@@ -130,8 +130,8 @@ def PlotKFoldResidualHistUsingWAvgPreds(savepath, name, endpoint):
         ec10_predictions = GroupDataForPerformance(Preprocess10x10Fold(name='EC10'))
         combo_predictions = GroupDataForPerformance(Preprocess10x10Fold(name=name))
         
-        ec50residuals = predictions[(combo_predictions.endpoint=='EC50') & (combo_predictions.SMILES.isin(ec50_predictions.SMILES))].residuals
-        ec10residuals = predictions[(combo_predictions.endpoint=='EC10') & (combo_predictions.SMILES.isin(ec10_predictions.SMILES))].residuals
+        ec50residuals = predictions[(combo_predictions.endpoint=='EC50') & (combo_predictions.Canonical_SMILES_figures.isin(ec50_predictions.Canonical_SMILES_figures))].residuals
+        ec10residuals = predictions[(combo_predictions.endpoint=='EC10') & (combo_predictions.Canonical_SMILES_figures.isin(ec10_predictions.Canonical_SMILES_figures))].residuals
 
         fig = make_subplots(rows=1, cols=1,
         subplot_titles=(['Residual distribution']),
@@ -270,7 +270,7 @@ def PlotKFoldComboBarUsingWAvgPreds(savepath, combomodel):
         qsar += [mean_L1, median_L1]
         qsarse += [se, MAD]
         combo_predictions = GroupDataForPerformance(Preprocess10x10Fold(name=combomodel))
-        combo_predictions = combo_predictions[(combo_predictions.endpoint==name) & (combo_predictions.SMILES.isin(single_predictions.SMILES))]
+        combo_predictions = combo_predictions[(combo_predictions.endpoint==name) & (combo_predictions.Canonical_SMILES_figures.isin(single_predictions.Canonical_SMILES_figures))]
         _, mean_L1, median_L1, se, MAD = combo_predictions.residuals, combo_predictions.L1error.mean(), combo_predictions.L1error.median(), combo_predictions.L1error.sem(), (abs(combo_predictions.L1error-combo_predictions.L1error.median())).median()/np.sqrt(len(combo_predictions))
         ecotoxformer += [mean_L1, median_L1]
         ecotoxformerse += [se, MAD]
@@ -431,14 +431,17 @@ def PlotPCA_CLSProjection(savepath, endpoint, flipaxis):
 
 
 ## QSAR COMPARISON INTERSECTION OF APPLICABILITY DOMAINS
-def PlotQSARcompBarUsingWAvgPredsInterersect(savepath, predictions, endpoint):
+def PlotQSARcompBarUsingWAvgPredsInterersect(savepath, predictions, endpoint, species_group):
 
     fig = go.Figure()
     xgroups  = ['Mean','Median']
     QSARs = ['ECOSAR','VEGA','TEST']
 
     if endpoint == 'EC50':
-        intersect = predictions[~((predictions.ECOSAR.isna() | predictions.VEGA.isna()) | predictions.TEST.isna())]
+        if species_group != 'algae':
+            intersect = predictions[~((predictions.ECOSAR.isna() | predictions.VEGA.isna()) | predictions.TEST.isna())]
+        else:
+            intersect = predictions[~((predictions.ECOSAR.isna() | predictions.VEGA.isna()))]
         print(intersect.shape)
     else:
         intersect = predictions[~(predictions.ECOSAR.isna() | predictions.VEGA.isna())]
@@ -502,7 +505,7 @@ def PlotQSARresidualScatter(savepath, predictions, endpoint):
     f'fishbAIT n={len(predictions)}', 
     f'ECOSAR n={len(predictions["ECOSAR"].dropna())}', 
     f'VEGA n={len(predictions["VEGA"].dropna())}',
-    f'TEST n={len(predictions["TEST"].dropna())}'), shared_yaxes=True, shared_xaxes=True,
+    f'T.E.S.T. n={len(predictions["TEST"].dropna())}'), shared_yaxes=True, shared_xaxes=True,
     horizontal_spacing=0.05, vertical_spacing=0.1)
 
     for i, model in enumerate(models):
@@ -571,7 +574,7 @@ def PlotQSARresidualScatterIntersect(savepath, predictions, endpoint):
     f'fishbAIT n={len(predictions)}', 
     f'ECOSAR n={len(predictions["ECOSAR"].dropna())}', 
     f'VEGA n={len(predictions["VEGA"].dropna())}',
-    f'TEST n={len(predictions["TEST"].dropna())}'), shared_yaxes=True, shared_xaxes=True,
+    f'T.E.S.T. n={len(predictions["TEST"].dropna())}'), shared_yaxes=True, shared_xaxes=True,
     horizontal_spacing=0.05, vertical_spacing=0.1)
 
     for i, model in enumerate(models):
@@ -629,7 +632,7 @@ def PlotQSARcompScatter(savepath, predictions, endpoint):
     f'fishbAIT n={len(predictions)}', 
     f'ECOSAR n={len(predictions["ECOSAR"].dropna())}', 
     f'VEGA n={len(predictions["VEGA"].dropna())}',
-    f'TEST n={len(predictions["TEST"].dropna())}'), shared_yaxes=True, shared_xaxes=True,
+    f'T.E.S.T. n={len(predictions["TEST"].dropna())}'), shared_yaxes=True, shared_xaxes=True,
     horizontal_spacing=0.05, vertical_spacing=0.1)
 
 
@@ -699,13 +702,13 @@ def PlotQSARCoverageComboBar(savepath, inside_AD):
         ECOSAR, VEGA, TEST = LoadQSAR(endpoint=endpoint) 
         ECOSAR_tmp, TEST_tmp, VEGA_tmp = PrepareQSARData(ECOSAR, TEST, VEGA, inside_AD=inside_AD, remove_experimental=False)
         avg_predictions = Preprocess10x10Fold(endpoint)
-        all_smiles = avg_predictions.SMILES.drop_duplicates().tolist()
+        all_smiles = avg_predictions.Canonical_SMILES_figures.drop_duplicates().tolist()
 
-        testsmiles = TEST_tmp.original_SMILES[TEST_tmp.original_SMILES.isin(all_smiles)]
-        ecosmiles = ECOSAR_tmp.original_SMILES[ECOSAR_tmp.original_SMILES.isin(all_smiles)]
-        vegasmiles = VEGA_tmp.original_SMILES[VEGA_tmp.original_SMILES.isin(all_smiles)]
+        testsmiles = TEST_tmp.Canonical_SMILES_figures[TEST_tmp.Canonical_SMILES_figures.isin(all_smiles)]
+        ecosmiles = ECOSAR_tmp.Canonical_SMILES_figures[ECOSAR_tmp.Canonical_SMILES_figures.isin(all_smiles)]
+        vegasmiles = VEGA_tmp.Canonical_SMILES_figures[VEGA_tmp.Canonical_SMILES_figures.isin(all_smiles)]
 
-        avg_predictions.SMILES.drop_duplicates().to_csv(f'../../data/results/all_smiles_{endpoint}_for_venn.txt', header=None, index=None, sep='\n', mode='w')
+        avg_predictions.Canonical_SMILES_figures.drop_duplicates().to_csv(f'../../data/results/all_smiles_{endpoint}_for_venn.txt', header=None, index=None, sep='\n', mode='w')
         ecosmiles.drop_duplicates().to_csv(f'../../data/results/ecosar_smiles_{endpoint}_{AD}_for_venn.txt', header=None, index=None, sep='\n', mode='w')
         testsmiles.drop_duplicates().to_csv(f'../../data/results/test_smiles_{endpoint}_{AD}_for_venn.txt',  header=None, index=None, sep='\n', mode='w')
         vegasmiles.drop_duplicates().to_csv(f'../../data/results/vega_smiles_{endpoint}_{AD}_for_venn.txt',  header=None, index=None, sep='\n', mode='w')

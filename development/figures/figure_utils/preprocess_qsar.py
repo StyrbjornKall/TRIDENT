@@ -1,32 +1,48 @@
 from .figure_flags import *
-from .preprocess_data import DurationBinner
+from .preprocess_data import DurationBinner, GetCanonicalSMILESForFigures
 import pandas as pd 
 import numpy as np
 
 # MAIN FUNCTIONS
 ## LOAD QSAR TOOL DATASETS
-def LoadQSAR(endpoint):    
+def LoadQSAR(endpoint, species_group):    
     if endpoint == 'EC50':
-        VEGA = pd.read_csv('../../data/results/VEGA_fish_EC50.zip', compression='zip')
-        ECOSAR = pd.read_csv('../../data/results/ECOSAR_SMILES_fish_LD50_min.zip', compression='zip')
-        TEST = pd.read_csv('../../data/results/TEST.zip', compression='zip')
-        ECOSAR = ECOSAR[(ECOSAR.Duration == '96h')]
+        VEGA = pd.read_pickle('../../data/results/VEGA_EC50_fish_invertebrates_algae.zip', compression='zip')
+        ECOSAR = pd.read_pickle('../../data/results/ECOSAR_EC50_min_fish_invertebrates_algae.zip', compression='zip')
+        TEST = pd.read_pickle('../../data/results/TEST_fish_invertebrates.zip', compression='zip')
     elif endpoint == 'EC10':
-        VEGA = pd.read_csv('../../data/results/VEGA_fish_NOEC.zip', compression='zip')
-        ECOSAR = pd.read_csv('../../data/results/ECOSAR_SMILES_fish_ChV_min.zip', compression='zip')
+        VEGA = pd.read_pickle('../../data/results/VEGA_NOEC_fish_invertebrates_algae.zip', compression='zip')
+        ECOSAR = pd.read_pickle('../../data/results/ECOSAR_ChV_min_fish_invertebrates_algae.zip', compression='zip')
         ECOSAR['Concentration (mg/L)'] = ECOSAR['Concentration (mg/L)']/np.sqrt(2)
         TEST = VEGA.copy()[0:0]
     elif endpoint == 'EC50EC10':
-        VEGA_ec10 = pd.read_csv('../../data/results/VEGA_fish_NOEC.zip', compression='zip')
-        ECOSAR_ec10 = pd.read_excel('../../data/results/ECOSAR_SMILES_fish_ChV_min.zip', compression='zip')
+        VEGA_ec10 = pd.read_pickle('../../data/results/VEGA_NOEC_fish_invertebrates_algae.zip', compression='zip')
+        ECOSAR_ec10 = pd.read_pickle('../../data/results/ECOSAR_ChV_min_fish_invertebrates_algae.zip', compression='zip')
         ECOSAR_ec10['Concentration (mg/L)'] = ECOSAR_ec10['Concentration (mg/L)']/np.sqrt(2)
-        VEGA_ec50 = pd.read_csv('../../data/results/VEGA_fish_EC50.zip', compression='zip')
-        ECOSAR_ec50 = pd.read_csv('../../data/results/ECOSAR_SMILES_fish_LD50_min.zip', compression='zip')
-        ECOSAR_ec50 = ECOSAR_ec50[(ECOSAR_ec50.Duration == '96h')]
-        TEST = pd.read_csv('../../data/results/TEST.zip', compression='zip')
+
+        VEGA_ec50 = pd.read_pickle('../../data/results/VEGA_EC50_fish_invertebrates_algae.zip', compression='zip')
+        ECOSAR_ec50 = pd.read_pickle('../../data/results/ECOSAR_EC50_min_fish_invertebrates_algae.zip', compression='zip')
+        TEST = pd.read_pickle('../../data/results/TEST.zip', compression='zip')
         ECOSAR = pd.concat([ECOSAR_ec10,ECOSAR_ec50], axis=0)
         VEGA = pd.concat([VEGA_ec10,VEGA_ec50], axis=0)
         del [ECOSAR_ec10, ECOSAR_ec50, VEGA_ec10, VEGA_ec50]
+
+    if species_group == 'fish':
+        ECOSAR = ECOSAR[ECOSAR.Organism=='Fish']
+        TEST = TEST[TEST.model_organism=='Fish']
+        VEGA = VEGA[VEGA.model_organism.isin(['Fish','Fathead Minnow','Guppy'])]
+    if species_group == 'invertebrates':
+        ECOSAR = ECOSAR[ECOSAR.Organism=='Daphnid']
+        TEST = TEST[TEST.model_organism=='Daphnia_magna']
+        VEGA = VEGA[VEGA.model_organism.isin(['Daphnia Magna'])]
+    if species_group == 'algae':
+        ECOSAR = ECOSAR[ECOSAR.Organism=='Green Algae']
+        VEGA = VEGA[VEGA.model_organism.isin(['Algae'])]
+        TEST = VEGA.copy()[0:0]
+
+    ECOSAR['Canonical_SMILES_figures'] = ECOSAR.original_SMILES.apply(lambda x: GetCanonicalSMILESForFigures(x))
+    VEGA['Canonical_SMILES_figures'] = VEGA.original_SMILES.apply(lambda x: GetCanonicalSMILESForFigures(x))
+    TEST['Canonical_SMILES_figures'] = TEST.original_SMILES.apply(lambda x: GetCanonicalSMILESForFigures(x))
 
     return ECOSAR, VEGA, TEST   
 
@@ -76,7 +92,7 @@ def PrepareQSARData(ECOSAR, TEST, VEGA, inside_AD, remove_experimental):
     return ECOSAR_tmp, TEST_tmp, VEGA_tmp
 
 ## MATCH QSAR PREDICTIONS TO SMILES IN OUR DATASET
-def MatchQSAR(df, ECOSAR_dict, TEST_dict, VEGA_dict, endpoint: str, duration: str=None):
+def MatchQSAR(df, ECOSAR_dict, TEST_dict, VEGA_dict, endpoint: str, species_group: str, duration: str=None):
 
     def Match(x, QSAR_dict):
         try:
@@ -84,20 +100,25 @@ def MatchQSAR(df, ECOSAR_dict, TEST_dict, VEGA_dict, endpoint: str, duration: st
         except:
             return None
         
-    try:
-        df['CAS'] = df.CAS.apply(lambda x: x.replace('-','')).astype(int)
-    except:
-        pass
-
     if endpoint == 'EC50':
-        df = df[df.Duration_Value == 96]
+        if species_group == 'fish':
+            df = df[df.Duration_Value == 96]
+        if species_group == 'invertebrates':
+            df = df[df.Duration_Value == 48]
+        if species_group == 'algae':
+            df = df[(df.Duration_Value == 96) | (df.Duration_Value == 71)]
+
     elif endpoint in ['EC10', 'NOEC', 'ChV']:
         df = DurationBinner(df, [170, 680, np.Inf])
         df = df[df.Duration_Value_binned.isin(duration)]
 
-    df['ECOSAR'] = df.SMILES.apply(lambda x: Match(x, ECOSAR_dict))
-    df['TEST'] = df.SMILES.apply(lambda x: Match(x, TEST_dict))
-    df['VEGA'] = df.SMILES.apply(lambda x: Match(x, VEGA_dict))
+    df['ECOSAR'] = df.Canonical_SMILES_figures.apply(lambda x: Match(x, ECOSAR_dict))
+    df['TEST'] = df.Canonical_SMILES_figures.apply(lambda x: Match(x, TEST_dict))
+    df['VEGA'] = df.Canonical_SMILES_figures.apply(lambda x: Match(x, VEGA_dict))
+
+    if species_group == 'algae':
+        df['ECOSAR'][df['Duration_Value']==71] = None #Ecosar does not give outputs for 72h
+        df['VEGA'][df['Duration_Value']==96] = None #Vega does not give outputs for 96h
 
     return df
 
@@ -107,44 +128,59 @@ def MatchQSAR(df, ECOSAR_dict, TEST_dict, VEGA_dict, endpoint: str, duration: st
 def RemoveOutOfAD(df, QSAR_type: str):
     if QSAR_type == 'ECOSAR':
         tmp = len(df)
-        should_not_profile = pd.read_csv('../../data/results/ECOSAR_v2.0_CAS_outside_AD.zip', compression='zip')
+        # Remove CAS that are not profilable (from ECOSAR CAS prediction) and Alerts
+        should_not_profile = pd.read_pickle('../../data/results/ECOSAR_v2.0_should_not_be_profiled_CAS_fish_invertebrates_algae.zip', compression='zip')
         df = df[(~df.CAS.isin(should_not_profile.CAS) & (df.Alert.isin([' '])) | df.Alert.isin(['  AcuteToChronicRatios', '  SaturateSolublity']))]
-        print(f'Removed {tmp-len(df)} rows')
+        # Remove SMILES that are not profilable (from ECOSAR CAS prediction)
+        df = df[~df.SMILES.isin(should_not_profile.SMILES)]
+        # Remove CAS that are not profilable (from ECOSAR SMILES prediction)
+        should_not_profile = pd.read_pickle('../../data/results/ECOSAR_v2.0_should_not_be_profiled_SMILES_fish_invertebrates_algae.zip', compression='zip')
+        df = df[~df.CAS.isin(should_not_profile.CAS)]
+        # Remove SMILES that are not profilable (from ECOSAR SMILES prediction)
+        df = df[~df.SMILES.isin(should_not_profile.SMILES)]
+        print(f'Removed {tmp-len(df)} outside AD rows')
         return df
     elif QSAR_type == 'TEST':
-        print(f'Removed 0 rows')
+        print(f'Removed 0 outside AD rows')
         return df
     elif QSAR_type == 'VEGA':
         tmp = len(df)
         df = df[df.reliability != 'low']
-        print(f'Removed {tmp-len(df)} rows')
+        print(f'Removed {tmp-len(df)} outside AD rows')
         return df
 
 ## REMOVE EXPERIMENTAL VALUES (TRAINING SET)
 def RemoveExperimentalData(df, QSAR_type: str):
     if QSAR_type == 'ECOSAR':
+        tmp = len(df)
         experimental_ecosar = pd.read_csv('../../data/results/ECOSAR_v2.2_CAS_experimental.zip', compression='zip')
         df = df[~df.CAS.isin(experimental_ecosar.ECOSAR_experimental_CAS.tolist())]
+        print(f'Removed {tmp-len(df)} experimental rows')
     elif QSAR_type == 'TEST':
-        experimental_smiles = df[df.reliability == 'EXPERIMENTAL'].original_SMILES.unique().tolist()
-        df = df[~df.original_SMILES.isin(experimental_smiles)]
+        tmp = len(df)
+        experimental_smiles = df[df.reliability == 'EXPERIMENTAL'].Canonical_SMILES_figures.unique().tolist()
+        df = df[~df.Canonical_SMILES_figures.isin(experimental_smiles)]
+        print(f'Removed {tmp-len(df)} experimental rows')
     elif QSAR_type == 'VEGA':
+        tmp = len(df)
         df = df[df.reliability != 'EXPERIMENTAL']
+        print(f'Removed {tmp-len(df)} experimental rows')
 
     return df
 
 ## IF SEVERAL PREDICTIONS PER SMILES - GET THE BEST PREDICTIONS FOR EACH TOOL
 def BestQSARPrediction(df, QSAR_type: str):
     if QSAR_type == 'ECOSAR':
-        df = df.groupby(['original_SMILES'], as_index=False).min()
+        df = df.groupby(['Canonical_SMILES_figures'], as_index=False, dropna=False).min()
     elif QSAR_type == 'TEST':
-        df = df.groupby(['original_SMILES'], as_index = False).min()
+        df = df.groupby(['Canonical_SMILES_figures'], as_index = False, dropna=False).min()
     elif QSAR_type == 'VEGA':
         remaining = df.copy()
         chosenvega = pd.DataFrame()
         for rely in ['EXPERIMENTAL','good','moderate','low']:
             chosenvega = pd.concat([remaining[remaining.reliability==rely], chosenvega])
-            remaining = remaining[~remaining.original_SMILES.isin(chosenvega.original_SMILES)]
-        df = chosenvega.groupby(['original_SMILES'], as_index=False).min()
+            remaining = remaining[~remaining.Canonical_SMILES_figures.isin(chosenvega.Canonical_SMILES_figures)]
+        df = chosenvega.groupby(['Canonical_SMILES_figures'], as_index=False).min()
 
     return df
+
