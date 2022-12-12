@@ -11,6 +11,7 @@ development/figures/figures_for_publication/EC50EC10/*.html
 development/figures/figures_for_publication/*.svg
 development/figures/figures_for_publication/*.png
 development/figures/figures_for_publication/*.html
+development/figures/figures_for_publication/venn/*.txt
 
 development/wandb/*
 
