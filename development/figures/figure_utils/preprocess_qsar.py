@@ -130,14 +130,16 @@ def RemoveOutOfAD(df, QSAR_type: str):
         tmp = len(df)
         # Remove CAS that are not profilable (from ECOSAR CAS prediction) and Alerts
         should_not_profile = pd.read_pickle('../../data/results/ECOSAR_v2.0_should_not_be_profiled_CAS_fish_invertebrates_algae.zip', compression='zip')
+        should_not_profile['Canonical_SMILES_figures'] = should_not_profile.SMILES.apply(lambda x: GetCanonicalSMILESForFigures(x))
         df = df[(~df.CAS.isin(should_not_profile.CAS) & (df.Alert.isin([' '])) | df.Alert.isin(['  AcuteToChronicRatios', '  SaturateSolublity']))]
         # Remove SMILES that are not profilable (from ECOSAR CAS prediction)
-        df = df[~df.SMILES.isin(should_not_profile.SMILES)]
+        df = df[~df.Canonical_SMILES_figures.isin(should_not_profile.Canonical_SMILES_figures)]
         # Remove CAS that are not profilable (from ECOSAR SMILES prediction)
         should_not_profile = pd.read_pickle('../../data/results/ECOSAR_v2.0_should_not_be_profiled_SMILES_fish_invertebrates_algae.zip', compression='zip')
+        should_not_profile['Canonical_SMILES_figures'] = should_not_profile.SMILES.apply(lambda x: GetCanonicalSMILESForFigures(x))
         df = df[~df.CAS.isin(should_not_profile.CAS)]
         # Remove SMILES that are not profilable (from ECOSAR SMILES prediction)
-        df = df[~df.SMILES.isin(should_not_profile.SMILES)]
+        df = df[~df.Canonical_SMILES_figures.isin(should_not_profile.Canonical_SMILES_figures)]
         print(f'Removed {tmp-len(df)} outside AD rows')
         return df
     elif QSAR_type == 'TEST':
@@ -171,16 +173,16 @@ def RemoveExperimentalData(df, QSAR_type: str):
 ## IF SEVERAL PREDICTIONS PER SMILES - GET THE BEST PREDICTIONS FOR EACH TOOL
 def BestQSARPrediction(df, QSAR_type: str):
     if QSAR_type == 'ECOSAR':
-        df = df.groupby(['Canonical_SMILES_figures'], as_index=False, dropna=False).min()
+        df = df.groupby(['Canonical_SMILES_figures'], as_index=False, dropna=False).min(numeric_only=True)
     elif QSAR_type == 'TEST':
-        df = df.groupby(['Canonical_SMILES_figures'], as_index = False, dropna=False).min()
+        df = df.groupby(['Canonical_SMILES_figures'], as_index = False, dropna=False).min(numeric_only=True)
     elif QSAR_type == 'VEGA':
         remaining = df.copy()
         chosenvega = pd.DataFrame()
         for rely in ['EXPERIMENTAL','good','moderate','low']:
             chosenvega = pd.concat([remaining[remaining.reliability==rely], chosenvega])
             remaining = remaining[~remaining.Canonical_SMILES_figures.isin(chosenvega.Canonical_SMILES_figures)]
-        df = chosenvega.groupby(['Canonical_SMILES_figures'], as_index=False).min()
+        df = chosenvega.groupby(['Canonical_SMILES_figures'], as_index=False).min(numeric_only=True)
 
     return df
 

@@ -1,5 +1,5 @@
 from .figure_flags import *
-from .preprocess_data import Preprocess10x10Fold, GroupDataForPerformance
+from .preprocess_data import Preprocess10x10Fold, GroupDataForPerformance, GetCanonicalSMILESForFigures
 from .preprocess_qsar import LoadQSAR, PrepareQSARData
 from .figure_functions import UpdateFigLayout, RescaleAxes
 import pandas as pd 
@@ -20,6 +20,7 @@ from sklearn.preprocessing import StandardScaler
 def PlotBaseModelLossfunResults(savepath):
 
     df = pd.read_csv('../../data/results/basemodel_sweep_results_5x_CV_RDkit.zip', compression='zip')
+    df['Canonical_SMILES_figures'] = df.SMILES_Canonical_RDKit.apply(lambda x: GetCanonicalSMILESForFigures(x))
 
     fig = go.Figure()
 
@@ -67,7 +68,7 @@ def PlotBaseModelLossfunResults(savepath):
     UpdateFigLayout(fig, None, [1,10],[1000,700],1, 'topright')
     RescaleAxes(fig, False, False)
 
-    fig.show()
+    fig.show(renderer='png')
 
     if savepath != None:
         fig.write_image(savepath+'.png', scale=7)
@@ -251,11 +252,11 @@ def PlotKFoldSingleBarUsingWAvgPreds(savepath, ec50_name, ec10_name):
         fig.write_html(savepath+'.html')
 
 ## BARPLOT PERFORMANCE COMBOMODEL (M50/10)
-def PlotKFoldComboBarUsingWAvgPreds(savepath, combomodel):
+def PlotKFoldComboBarUsingWAvgPreds(savepath, combomodel, species_group):
 
     fig = go.Figure()
 
-    names = ['EC50','EC10']
+    endpoints = [f'EC50',f'EC10']
     xgroups=[['Mean', 'Median', 'Mean', 'Median'], 
         ['EC50','EC50','EC10','EC10']]
     qsarbarcolors = [colors['EC50'],colors['EC50'],colors['EC10'],colors['EC10']]
@@ -264,13 +265,13 @@ def PlotKFoldComboBarUsingWAvgPreds(savepath, combomodel):
     qsarse = []
     ecotoxformer = []
     ecotoxformerse = []
-    for name in names:
-        single_predictions = GroupDataForPerformance(Preprocess10x10Fold(name=name))
+    for endpoint in endpoints:
+        single_predictions = GroupDataForPerformance(Preprocess10x10Fold(name=endpoint+f'_{species_group}'))
         _, mean_L1, median_L1, se, MAD = single_predictions.residuals, single_predictions.L1error.mean(), single_predictions.L1error.median(), single_predictions.L1error.sem(), (abs(single_predictions.L1error-single_predictions.L1error.median())).median()/np.sqrt(len(single_predictions))
         qsar += [mean_L1, median_L1]
         qsarse += [se, MAD]
         combo_predictions = GroupDataForPerformance(Preprocess10x10Fold(name=combomodel))
-        combo_predictions = combo_predictions[(combo_predictions.endpoint==name) & (combo_predictions.Canonical_SMILES_figures.isin(single_predictions.Canonical_SMILES_figures))]
+        combo_predictions = combo_predictions[(combo_predictions.endpoint==endpoint) & (combo_predictions.Canonical_SMILES_figures.isin(single_predictions.Canonical_SMILES_figures))]
         _, mean_L1, median_L1, se, MAD = combo_predictions.residuals, combo_predictions.L1error.mean(), combo_predictions.L1error.median(), combo_predictions.L1error.sem(), (abs(combo_predictions.L1error-combo_predictions.L1error.median())).median()/np.sqrt(len(combo_predictions))
         ecotoxformer += [mean_L1, median_L1]
         ecotoxformerse += [se, MAD]
@@ -280,7 +281,7 @@ def PlotKFoldComboBarUsingWAvgPreds(savepath, combomodel):
     ecotoxformer = np.array(ecotoxformer)
     ecotoxformerse = np.array(ecotoxformerse)
     fig.add_trace(go.Bar(
-                name=f'{name}', x=xgroups, y=10**qsar,
+                name=endpoint+f'_{species_group}', x=xgroups, y=10**qsar,
                 error_y=dict(type='data',symmetric=False,
                 array=10**qsar*(10**qsarse-1),
                 arrayminus=10**qsar*(1-10**-qsarse)),
@@ -687,7 +688,7 @@ def PlotQSARcompScatter(savepath, predictions, endpoint):
 
 
 ## QSAR COVERAGE/APPLICABILITY (INCLUDING EXPERIMENTAL/TRAINING) DATA
-def PlotQSARCoverageComboBar(savepath, inside_AD):
+def PlotQSARCoverageComboBar(savepath, inside_AD, species_group):
     if inside_AD:
         AD='AD'
     else:
@@ -699,19 +700,19 @@ def PlotQSARCoverageComboBar(savepath, inside_AD):
     fig = go.Figure()
 
     for endpoint in ['EC50', 'EC10']:
-        ECOSAR, VEGA, TEST = LoadQSAR(endpoint=endpoint) 
+        ECOSAR, VEGA, TEST = LoadQSAR(endpoint=endpoint, species_group=species_group) 
         ECOSAR_tmp, TEST_tmp, VEGA_tmp = PrepareQSARData(ECOSAR, TEST, VEGA, inside_AD=inside_AD, remove_experimental=False)
-        avg_predictions = Preprocess10x10Fold(endpoint)
+        avg_predictions = Preprocess10x10Fold(endpoint+f"_{species_group}")
         all_smiles = avg_predictions.Canonical_SMILES_figures.drop_duplicates().tolist()
 
         testsmiles = TEST_tmp.Canonical_SMILES_figures[TEST_tmp.Canonical_SMILES_figures.isin(all_smiles)]
         ecosmiles = ECOSAR_tmp.Canonical_SMILES_figures[ECOSAR_tmp.Canonical_SMILES_figures.isin(all_smiles)]
         vegasmiles = VEGA_tmp.Canonical_SMILES_figures[VEGA_tmp.Canonical_SMILES_figures.isin(all_smiles)]
 
-        avg_predictions.Canonical_SMILES_figures.drop_duplicates().to_csv(f'../../data/results/all_smiles_{endpoint}_for_venn.txt', header=None, index=None, sep='\n', mode='w')
-        ecosmiles.drop_duplicates().to_csv(f'../../data/results/ecosar_smiles_{endpoint}_{AD}_for_venn.txt', header=None, index=None, sep='\n', mode='w')
-        testsmiles.drop_duplicates().to_csv(f'../../data/results/test_smiles_{endpoint}_{AD}_for_venn.txt',  header=None, index=None, sep='\n', mode='w')
-        vegasmiles.drop_duplicates().to_csv(f'../../data/results/vega_smiles_{endpoint}_{AD}_for_venn.txt',  header=None, index=None, sep='\n', mode='w')
+        avg_predictions.Canonical_SMILES_figures.drop_duplicates().to_csv(f'../../data/results/all_smiles_{endpoint+f"_{species_group}"}_for_venn.txt', header=None, index=None, sep='\n', mode='w')
+        ecosmiles.drop_duplicates().to_csv(f'../../data/results/ecosar_smiles_{endpoint+f"_{species_group}"}_{AD}_for_venn.txt', header=None, index=None, sep='\n', mode='w')
+        testsmiles.drop_duplicates().to_csv(f'../../data/results/test_smiles_{endpoint+f"_{species_group}"}_{AD}_for_venn.txt',  header=None, index=None, sep='\n', mode='w')
+        vegasmiles.drop_duplicates().to_csv(f'../../data/results/vega_smiles_{endpoint+f"_{species_group}"}_{AD}_for_venn.txt',  header=None, index=None, sep='\n', mode='w')
 
     
         models = [all_smiles, ecosmiles, vegasmiles, testsmiles]
@@ -720,7 +721,7 @@ def PlotQSARCoverageComboBar(savepath, inside_AD):
 
         if endpoint=='EC50':
             fig.add_trace(go.Bar(
-                name='EC50',
+                name=endpoint+f"_{species_group}",
                 x=names, y=coverage,
                 marker_color = barcolorsec50,
                 marker=dict(
@@ -729,7 +730,7 @@ def PlotQSARCoverageComboBar(savepath, inside_AD):
             ))
         else:
             fig.add_trace(go.Bar(
-                name='EC10',
+                name=endpoint+f"_{species_group}",
                 x=names, y=coverage,
                 marker_color = barcolorsec10,
                 marker=dict(

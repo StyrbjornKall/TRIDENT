@@ -9,7 +9,7 @@ def Preprocess10x10Fold(name, uselogdata: bool=True):
     
     RescaleDuration(concatenated_results)
     concatenated_results.rename(columns={'preds': 'fishbAIT'}, inplace=True)
-    concatenated_results.endpoint[concatenated_results.endpoint == 'NOEC'] = 'EC10'
+    concatenated_results.loc[concatenated_results.endpoint == 'NOEC', 'endpoint'] = 'EC10'
     concatenated_results['residuals'] = concatenated_results.labels-concatenated_results.fishbAIT
 
     if uselogdata:
@@ -24,20 +24,20 @@ def Preprocess10x10Fold(name, uselogdata: bool=True):
 
     avg_predictions = concatenated_results.groupby(['CAS', 'organism', 'Duration_Value',
         'effect', 'mgperL','endpoint', 'SMILES','SMILES_Canonical_RDKit',
-        'cmpdname'], as_index=False, dropna=False).mean().drop(columns=['seed','fold_id','L1Error'])
+        'cmpdname'], as_index=False, dropna=False).mean(numeric_only=True).drop(columns=['seed','fold_id','L1Error'])
     avg_predictions['prediction_std'] = concatenated_results.groupby(['CAS', 'organism', 'Duration_Value',
         'effect', 'mgperL','endpoint', 'SMILES','SMILES_Canonical_RDKit',
-        'cmpdname'], as_index=False, dropna=False).std().fishbAIT
+        'cmpdname'], as_index=False, dropna=False).std(numeric_only=True).fishbAIT
     avg_predictions['residuals'] = avg_predictions.labels-avg_predictions.fishbAIT
     avg_predictions['CASRN'] = avg_predictions['CAS'].apply(lambda x: ''.join(x.split('-'))).astype(int)
-    avg_predictions['Canonical_SMILES_figures'] = avg_predictions.SMILES.apply(lambda x: GetCanonicalSMILESForFigures(x))
+    avg_predictions['Canonical_SMILES_figures'] = avg_predictions.SMILES_Canonical_RDKit.apply(lambda x: GetCanonicalSMILESForFigures(x))
     return avg_predictions
 
 def GroupDataForPerformance(avg_predictions):
 
     medians = avg_predictions.groupby(['Duration_Value',
     'effect','endpoint', 'Canonical_SMILES_figures',
-    'cmpdname'], as_index=False, dropna=False).median()
+    'cmpdname'], as_index=False, dropna=False).median(numeric_only=True)
     counts = avg_predictions.groupby(['Duration_Value',
     'effect','endpoint', 'Canonical_SMILES_figures',
     'cmpdname'], as_index=False, dropna=False).count()
@@ -49,7 +49,7 @@ def GroupDataForPerformance(avg_predictions):
         if col not in (['effect','endpoint', 'Canonical_SMILES_figures','cmpdname','counts']):
             medians[[col]] = medians[[col]]*medians[['counts']].to_numpy()
 
-    mean = medians.groupby((['endpoint','Canonical_SMILES_figures','cmpdname']), as_index=False, dropna=False).sum(min_count=1)
+    mean = medians.groupby((['endpoint','Canonical_SMILES_figures','cmpdname']), as_index=False, dropna=False).sum(min_count=1, numeric_only=True)
 
     for col in mean.columns:
         try:
