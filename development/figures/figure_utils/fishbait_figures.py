@@ -1,6 +1,6 @@
 from .figure_flags import *
 from .preprocess_data import Preprocess10x10Fold, GroupDataForPerformance, GetCanonicalSMILESForFigures
-from .preprocess_qsar import LoadQSAR, PrepareQSARData
+from .preprocess_qsar import LoadQSAR, PrepareQSARData, MatchQSAR
 from .figure_functions import UpdateFigLayout, RescaleAxes
 import pandas as pd 
 import numpy as np
@@ -127,8 +127,8 @@ def PlotKFoldResidualHistUsingWAvgPreds(savepath, name, endpoint):
     
     if endpoint == 'EC50EC10':
         del fig
-        ec50_predictions = GroupDataForPerformance(Preprocess10x10Fold(name='EC50'))
-        ec10_predictions = GroupDataForPerformance(Preprocess10x10Fold(name='EC10'))
+        ec50_predictions = GroupDataForPerformance(Preprocess10x10Fold(name='EC50_fish'))
+        ec10_predictions = GroupDataForPerformance(Preprocess10x10Fold(name='EC10_fish'))
         combo_predictions = GroupDataForPerformance(Preprocess10x10Fold(name=name))
         
         ec50residuals = predictions[(combo_predictions.endpoint=='EC50') & (combo_predictions.Canonical_SMILES_figures.isin(ec50_predictions.Canonical_SMILES_figures))].residuals
@@ -241,7 +241,7 @@ def PlotKFoldSingleBarUsingWAvgPreds(savepath, ec50_name, ec10_name):
     fig.update_yaxes(title_text="Absolute Prediction Error (fold change)")
 
     fig.update_layout(barmode='group')
-    UpdateFigLayout(fig, None, [1,10],[1000,700],1, 'topright')
+    UpdateFigLayout(fig, None, [1,8],[1000,700],1, 'topright')
 
     
     fig.show(renderer='png')
@@ -319,23 +319,23 @@ def PlotKFoldComboBarUsingWAvgPreds(savepath, combomodel, species_group):
 ## PRINCIPAL COMPONENT ANALYSIS (PCA)
 def PlotPCA_CLSProjection(savepath, endpoint, flipaxis):
     if endpoint == 'EC50':
-        results = pd.read_csv('../../data/results/EC50_final_model_training_data_RDkit.zip', compression='zip')
+        results = pd.read_csv('../../data/results/EC50_fish_final_model_training_data_RDkit.zip', compression='zip')
     elif endpoint == 'EC10':
-        results = pd.read_csv('../../data/results/EC10_final_model_training_data_RDkit.zip', compression='zip')
+        results = pd.read_csv('../../data/results/EC10_fish_final_model_training_data_RDkit.zip', compression='zip')
     elif endpoint == 'EC50EC10':
-        results = pd.read_csv('../../data/results/EC50EC10_final_model_training_data_RDkit.zip', compression='zip')
-
+        results = pd.read_csv('../../data/results/EC50EC10_fish_final_model_training_data_RDkit.zip', compression='zip')
+    results['Canonical_SMILES_figures'] = results.SMILES_Canonical_RDKit.apply(lambda x: GetCanonicalSMILESForFigures(x))
     results['labels'] = results['mgperL']
-    CLS_dict = dict(zip(results.SMILES_Canonical_RDKit, results.CLS_embeddings.tolist()))
+    CLS_dict = dict(zip(results.Canonical_SMILES_figures, results.CLS_embeddings.tolist()))
 
     results.drop(columns=['CLS_embeddings'], inplace=True)
 
     results = GroupDataForPerformance(results)
-    results = results.groupby(['SMILES_Canonical_RDKit','cmpdname'], as_index=False).median()
+    results = results.groupby(['Canonical_SMILES_figures','cmpdname'], as_index=False).median(numeric_only=True)
     results['L1Error'] = results.residuals.abs()
-    results['CLS_embeddings'] = results.SMILES_Canonical_RDKit.apply(lambda x: CLS_dict[x])
+    results['CLS_embeddings'] = results.Canonical_SMILES_figures.apply(lambda x: CLS_dict[x])
 
-    col = 'SMILES_Canonical_RDKit'
+    col = 'Canonical_SMILES_figures'
 
     results.CLS_embeddings = results.CLS_embeddings.apply(lambda x: json.loads(x))
     embeddings = np.array(results.CLS_embeddings.tolist())
@@ -709,10 +709,10 @@ def PlotQSARCoverageComboBar(savepath, inside_AD, species_group):
         ecosmiles = ECOSAR_tmp.Canonical_SMILES_figures[ECOSAR_tmp.Canonical_SMILES_figures.isin(all_smiles)]
         vegasmiles = VEGA_tmp.Canonical_SMILES_figures[VEGA_tmp.Canonical_SMILES_figures.isin(all_smiles)]
 
-        avg_predictions.Canonical_SMILES_figures.drop_duplicates().to_csv(f'../../data/results/all_smiles_{endpoint+f"_{species_group}"}_for_venn.txt', header=None, index=None, sep='\n', mode='w')
-        ecosmiles.drop_duplicates().to_csv(f'../../data/results/ecosar_smiles_{endpoint+f"_{species_group}"}_{AD}_for_venn.txt', header=None, index=None, sep='\n', mode='w')
-        testsmiles.drop_duplicates().to_csv(f'../../data/results/test_smiles_{endpoint+f"_{species_group}"}_{AD}_for_venn.txt',  header=None, index=None, sep='\n', mode='w')
-        vegasmiles.drop_duplicates().to_csv(f'../../data/results/vega_smiles_{endpoint+f"_{species_group}"}_{AD}_for_venn.txt',  header=None, index=None, sep='\n', mode='w')
+        avg_predictions.Canonical_SMILES_figures.drop_duplicates().to_csv(f'../../development/figures/figures_for_publication/venn/all_smiles_{endpoint+f"_{species_group}"}_for_venn.txt', header=None, index=None, sep='\n', mode='w')
+        ecosmiles.drop_duplicates().to_csv(f'../../development/figures/figures_for_publication/venn/ecosar_smiles_{endpoint+f"_{species_group}"}_{AD}_for_venn.txt', header=None, index=None, sep='\n', mode='w')
+        testsmiles.drop_duplicates().to_csv(f'../../development/figures/figures_for_publication/venn/test_smiles_{endpoint+f"_{species_group}"}_{AD}_for_venn.txt',  header=None, index=None, sep='\n', mode='w')
+        vegasmiles.drop_duplicates().to_csv(f'../../development/figures/figures_for_publication/venn/vega_smiles_{endpoint+f"_{species_group}"}_{AD}_for_venn.txt',  header=None, index=None, sep='\n', mode='w')
 
     
         models = [all_smiles, ecosmiles, vegasmiles, testsmiles]
@@ -746,5 +746,98 @@ def PlotQSARCoverageComboBar(savepath, inside_AD, species_group):
 
     if savepath != None:
         fig.write_image(savepath+'.png', scale=7)
-        fig.write_image(savepath+'.pdf')
+        fig.write_image(savepath+'.svg')
         fig.write_html(savepath+'.html')  
+
+
+def PlotQSARComp3inOne(savepath, endpoint,inside_AD, use_weighted_avg):
+
+    algae, algae_wavg = GetQSARPredictionForSpecies(endpoint+'_'+'algae', endpoint=endpoint, species_group='algae', durations=['short exposure','medium exposure', 'long exposure'], inside_AD=inside_AD)
+    invertebrates, invertebrates_wavg = GetQSARPredictionForSpecies(endpoint+'_'+'invertebrates', endpoint=endpoint, species_group='invertebrates', durations=['short exposure','medium exposure', 'long exposure'], inside_AD=inside_AD)
+    fish, fish_wavg = GetQSARPredictionForSpecies(endpoint+'_'+'fish', endpoint=endpoint, species_group='fish', durations=['short exposure','medium exposure', 'long exposure'], inside_AD=inside_AD)
+
+    if use_weighted_avg:
+        fish = fish_wavg
+        algae = algae_wavg
+        invertebrates = invertebrates_wavg
+
+    colors_specific = {'ECOSAR': colors['ECOSAR'], 'VEGA': colors['VEGA'], 'TEST': colors['TEST']}
+    if endpoint == 'EC50':
+        colors_specific['fish'] = '#e0ecf4'
+        colors_specific['invertebrates'] = '#fff7bc'
+        colors_specific['algae'] = '#c2e699'
+    else:
+        colors_specific['fish'] = '#9ebcda'
+        colors_specific['invertebrates'] = '#fec44f'
+        colors_specific['algae'] = '#78c679'
+
+    colorpergroup = {
+        'fishbAIT': [colors_specific['fish'], colors_specific['invertebrates'],colors_specific['algae']],
+        'ECOSAR': [colors_specific['ECOSAR'], colors_specific['ECOSAR'], colors_specific['ECOSAR']],
+        'VEGA': [colors_specific['VEGA'], colors_specific['VEGA'], colors_specific['VEGA']],
+        'TEST': [colors_specific['TEST'], colors_specific['TEST'], colors_specific['TEST']]}
+
+    fig = go.Figure()
+
+    xgroups = ['fish','invertebrates', 'algae']
+    QSARs = ['fishbAIT','ECOSAR','VEGA','TEST']
+
+    for i, qsar_tool in enumerate(QSARs):
+        try:
+            fish_L1Error = abs(fish[f'{qsar_tool}_residuals'])
+            invert_L1Error = abs(invertebrates[f'{qsar_tool}_residuals'])
+        except:
+            fish_L1Error = pd.DataFrame([None], columns=['L1Error'])
+            invert_L1Error = pd.DataFrame([None], columns=['L1Error'])
+
+        try:
+            alg_L1Error = abs(algae[f'{qsar_tool}_residuals'])
+        except:
+            alg_L1Error = pd.DataFrame([None], columns=['L1Error'])
+
+        _, fish_median_L1_qsar, _, fish_MAD_qsar = fish_L1Error.mean(), fish_L1Error.median(), fish_L1Error.sem(), (abs(fish_L1Error-fish_L1Error.median())).median()/np.sqrt(len(fish_L1Error))
+        _, invert_median_L1_qsar, _, invert_MAD_qsar = invert_L1Error.mean(), invert_L1Error.median(), invert_L1Error.sem(), (abs(invert_L1Error-invert_L1Error.median())).median()/np.sqrt(len(invert_L1Error))
+        _, alg_median_L1_qsar, _, alg_MAD_qsar = alg_L1Error.mean(), alg_L1Error.median(), alg_L1Error.sem(), (abs(alg_L1Error-alg_L1Error.median())).median()/np.sqrt(len(alg_L1Error))
+
+        fig.add_trace(go.Bar(
+            name=f'{qsar_tool}', x=xgroups, y=[10**fish_median_L1_qsar, 10**invert_median_L1_qsar, 10**alg_median_L1_qsar],
+            error_y=dict(type='data',
+            symmetric=False,
+            array=[10**fish_median_L1_qsar*(10**fish_MAD_qsar-1),10**invert_median_L1_qsar*(10**invert_MAD_qsar-1),10**alg_median_L1_qsar*(10**alg_MAD_qsar-1)],
+            arrayminus=[10**fish_median_L1_qsar*(1-10**-fish_MAD_qsar), 10**invert_median_L1_qsar*(1-10**-invert_MAD_qsar), 10**alg_median_L1_qsar*(1-10**-alg_MAD_qsar)]),
+            marker_color = colorpergroup[qsar_tool],
+            marker=dict(
+                    line_width=1,
+                    line_color='Black'),
+        ))
+
+
+    fig.update_yaxes(title_text='Absolute Prediction Error (fold change)', tickfont = dict(size=FONTSIZE))
+
+    fig.update_layout(barmode='group')
+    UpdateFigLayout(fig, None, [1,28],[1000,700],1, 'topright')
+    RescaleAxes(fig, False, False)
+
+    fig.show(renderer='png')
+
+    if savepath != None:
+        fig.write_image(savepath+'.png', scale=7)
+        fig.write_image(savepath+'.svg')
+        fig.write_html(savepath+'.html')
+
+
+def GetQSARPredictionForSpecies(name, endpoint, species_group, durations, inside_AD):
+    avg_predictions = Preprocess10x10Fold(name=name)
+    ECOSAR, VEGA, TEST = LoadQSAR(endpoint=endpoint, species_group=species_group)
+    ECOSAR, TEST, VEGA = PrepareQSARData(ECOSAR, TEST, VEGA, inside_AD=inside_AD, remove_experimental=True)
+    TEST_dict = dict(zip(TEST.Canonical_SMILES_figures, TEST.value))
+    VEGA_dict = dict(zip(VEGA.Canonical_SMILES_figures, VEGA.value))
+    ECOSAR_dict = dict(zip(ECOSAR.Canonical_SMILES_figures, ECOSAR.value))
+
+    qsar_preds = MatchQSAR(avg_predictions, ECOSAR_dict, TEST_dict, VEGA_dict, endpoint=endpoint, duration=durations, species_group=species_group)
+    qsar_preds[['ECOSAR_residuals','VEGA_residuals','TEST_residuals']] = qsar_preds[['ECOSAR','VEGA','TEST']] - qsar_preds[['labels']].to_numpy()
+    weighted_avg_qsar_preds = GroupDataForPerformance(qsar_preds)
+    if (endpoint == 'EC10') | (species_group=='algae'):
+        weighted_avg_qsar_preds[['TEST', 'TEST_residuals']] = None
+
+    return qsar_preds, weighted_avg_qsar_preds

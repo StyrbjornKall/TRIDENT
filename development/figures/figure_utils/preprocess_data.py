@@ -29,6 +29,7 @@ def Preprocess10x10Fold(name, uselogdata: bool=True):
         'effect', 'mgperL','endpoint', 'SMILES','SMILES_Canonical_RDKit',
         'cmpdname'], as_index=False, dropna=False).std(numeric_only=True).fishbAIT
     avg_predictions['residuals'] = avg_predictions.labels-avg_predictions.fishbAIT
+    avg_predictions['fishbAIT_residuals'] = avg_predictions['residuals']
     avg_predictions['CASRN'] = avg_predictions['CAS'].apply(lambda x: ''.join(x.split('-'))).astype(int)
     avg_predictions['Canonical_SMILES_figures'] = avg_predictions.SMILES_Canonical_RDKit.apply(lambda x: GetCanonicalSMILESForFigures(x))
     return avg_predictions

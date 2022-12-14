@@ -9,7 +9,7 @@ def LoadQSAR(endpoint, species_group):
     if endpoint == 'EC50':
         VEGA = pd.read_pickle('../../data/results/VEGA_EC50_fish_invertebrates_algae.zip', compression='zip')
         ECOSAR = pd.read_pickle('../../data/results/ECOSAR_EC50_min_fish_invertebrates_algae.zip', compression='zip')
-        TEST = pd.read_pickle('../../data/results/TEST_fish_invertebrates.zip', compression='zip')
+        TEST = pd.read_pickle('../../data/results/TEST_fish_invertebrates_algae.zip', compression='zip')
     elif endpoint == 'EC10':
         VEGA = pd.read_pickle('../../data/results/VEGA_NOEC_fish_invertebrates_algae.zip', compression='zip')
         ECOSAR = pd.read_pickle('../../data/results/ECOSAR_ChV_min_fish_invertebrates_algae.zip', compression='zip')
@@ -22,7 +22,7 @@ def LoadQSAR(endpoint, species_group):
 
         VEGA_ec50 = pd.read_pickle('../../data/results/VEGA_EC50_fish_invertebrates_algae.zip', compression='zip')
         ECOSAR_ec50 = pd.read_pickle('../../data/results/ECOSAR_EC50_min_fish_invertebrates_algae.zip', compression='zip')
-        TEST = pd.read_pickle('../../data/results/TEST.zip', compression='zip')
+        TEST = pd.read_pickle('../../data/results/TEST_fish_invertebrates_algae.zip', compression='zip')
         ECOSAR = pd.concat([ECOSAR_ec10,ECOSAR_ec50], axis=0)
         VEGA = pd.concat([VEGA_ec10,VEGA_ec50], axis=0)
         del [ECOSAR_ec10, ECOSAR_ec50, VEGA_ec10, VEGA_ec50]
@@ -104,7 +104,7 @@ def MatchQSAR(df, ECOSAR_dict, TEST_dict, VEGA_dict, endpoint: str, species_grou
         if species_group == 'fish':
             df = df[df.Duration_Value == 96]
         if species_group == 'invertebrates':
-            df = df[df.Duration_Value == 48]
+            df = df[df.Duration_Value == 47]
         if species_group == 'algae':
             df = df[(df.Duration_Value == 96) | (df.Duration_Value == 71)]
 
@@ -127,7 +127,7 @@ def MatchQSAR(df, ECOSAR_dict, TEST_dict, VEGA_dict, endpoint: str, species_grou
 ## GET APPLICABILITY DOMAIN
 def RemoveOutOfAD(df, QSAR_type: str):
     if QSAR_type == 'ECOSAR':
-        tmp = len(df)
+        tmp = len(df.Canonical_SMILES_figures.drop_duplicates())
         # Remove CAS that are not profilable (from ECOSAR CAS prediction) and Alerts
         should_not_profile = pd.read_pickle('../../data/results/ECOSAR_v2.0_should_not_be_profiled_CAS_fish_invertebrates_algae.zip', compression='zip')
         should_not_profile['Canonical_SMILES_figures'] = should_not_profile.SMILES.apply(lambda x: GetCanonicalSMILESForFigures(x))
@@ -140,34 +140,34 @@ def RemoveOutOfAD(df, QSAR_type: str):
         df = df[~df.CAS.isin(should_not_profile.CAS)]
         # Remove SMILES that are not profilable (from ECOSAR SMILES prediction)
         df = df[~df.Canonical_SMILES_figures.isin(should_not_profile.Canonical_SMILES_figures)]
-        print(f'Removed {tmp-len(df)} outside AD rows')
+        print(f'Removed {tmp-len(df.Canonical_SMILES_figures.drop_duplicates())} SMILES outside AD')
         return df
     elif QSAR_type == 'TEST':
         print(f'Removed 0 outside AD rows')
         return df
     elif QSAR_type == 'VEGA':
-        tmp = len(df)
+        tmp = len(df.Canonical_SMILES_figures.drop_duplicates())
         df = df[df.reliability != 'low']
-        print(f'Removed {tmp-len(df)} outside AD rows')
+        print(f'Removed {tmp-len(df.Canonical_SMILES_figures.drop_duplicates())} SMILES outside AD')
         return df
 
 ## REMOVE EXPERIMENTAL VALUES (TRAINING SET)
 def RemoveExperimentalData(df, QSAR_type: str):
     if QSAR_type == 'ECOSAR':
-        tmp = len(df)
+        tmp = len(df.Canonical_SMILES_figures.drop_duplicates())
         experimental_ecosar = pd.read_csv('../../data/results/ECOSAR_v2.2_CAS_experimental.zip', compression='zip')
         df = df[~df.CAS.isin(experimental_ecosar.ECOSAR_experimental_CAS.tolist())]
-        print(f'Removed {tmp-len(df)} experimental rows')
+        print(f'Removed {tmp-len(df.Canonical_SMILES_figures.drop_duplicates())} SMILES experimental')
     elif QSAR_type == 'TEST':
-        tmp = len(df)
+        tmp = len(df.Canonical_SMILES_figures.drop_duplicates())
         experimental_smiles = df[df.reliability == 'EXPERIMENTAL'].Canonical_SMILES_figures.unique().tolist()
         df = df[~df.Canonical_SMILES_figures.isin(experimental_smiles)]
-        print(f'Removed {tmp-len(df)} experimental rows')
+        print(f'Removed {tmp-len(df.Canonical_SMILES_figures.drop_duplicates())} SMILES experimental')
     elif QSAR_type == 'VEGA':
-        tmp = len(df)
+        tmp = len(df.Canonical_SMILES_figures.drop_duplicates())
         df = df[df.reliability != 'EXPERIMENTAL']
-        print(f'Removed {tmp-len(df)} experimental rows')
-
+        print(f'Removed {tmp-len(df.Canonical_SMILES_figures.drop_duplicates())} SMILES experimental')
+        
     return df
 
 ## IF SEVERAL PREDICTIONS PER SMILES - GET THE BEST PREDICTIONS FOR EACH TOOL
