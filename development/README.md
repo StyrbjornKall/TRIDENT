@@ -26,21 +26,22 @@ This will be the basic repo in which all different development folders will be s
 A wandb Project is basically a folder containing something specific to that project. In this publication a project is specific to a type of run (e.g. 10x10 K-fold CV for all species groups). Here are the projects according to the presented study:
 
 1. *chemberta_version_and_loss_function_sweep* Will host sweeps establishing correct ChemBERTa version and loss function
-2. *K_fold_HP_sweep_EC50_fish* Will host basyesian sweeps establishing hyperparameter and locking M<sup>50</sup> hyperparameter/parameter configuration
-3. *K_fold_HP_sweep_EC10_fish* Will host basyesian sweeps establishing hyperparameter and locking M<sup>10</sup> hyperparameter/parameter configuration
-4. *K_fold_HP_sweep_EC50EC10_fish* Will host basyesian sweeps establishing hyperparameter and locking M<sup>50/10</sup> hyperparameter/parameter configuration
+2. *K_fold_HP_sweep_EC50_fish* Will host basyesian sweeps establishing hyperparameter and locking M<sub>50</sub> hyperparameter/parameter configuration
+3. *K_fold_HP_sweep_EC10_fish* Will host basyesian sweeps establishing hyperparameter and locking M<sub>10</sub> hyperparameter/parameter configuration
+4. *K_fold_HP_sweep_EC50EC10_fish* Will host basyesian sweeps establishing hyperparameter and locking M<sub>50/10</sub> hyperparameter/parameter configuration
 
-5. *100Fold_CV_fish* Will host grid sweeps for 10x10 K-fold cross-validation used for model accuracy calculations for M<sup>50</sup>, M<sup>10</sup>, M<sup>50/10</sup>
-6. *100Fold_CV_invertebrates* Will host grid sweeps for 10x10 K-fold cross-validation used for model accuracy calculations for M<sup>50</sup>, M<sup>10</sup>, M<sup>50/10</sup>
-7. *100Fold_CV_algae* Will host grid sweeps for 10x10 K-fold cross-validation used for model accuracy calculations for M<sup>50</sup>, M<sup>10</sup>, M<sup>50/10</sup>
+5. *100Fold_CV_fish* Will host grid sweeps for 10x10 K-fold cross-validation used for model accuracy calculations for M<sub>50</sub>, M<sub>10</sub>, M<sub>50/10</sub>
+6. *100Fold_CV_invertebrates* Will host grid sweeps for 10x10 K-fold cross-validation used for model accuracy calculations for M<sub>50</sub>, M<sub>10</sub>, M<sub>50/10</sub>
+7. *100Fold_CV_algae* Will host grid sweeps for 10x10 K-fold cross-validation used for model accuracy calculations for M<sub>50</sub>, M<sub>10</sub>, M<sub>50/10</sub>
 
 8. *Final_model* Will host runs for training the final models
 
 ### Create sweeps inside Projects using the configuration .yml files
-With the wandb Projects (directories) set up, the next step is to create sweeps inside these projects using the configuration files given in `wandb_configurations` (folders are named according to the Projects they are supposed to be in). A sweep is created by clicking the broom icon inside a project and then "Create Sweep". Paste the contents of the .yaml into the prompt and click "Create Sweep".
+With the wandb Projects (directories) set up, the next step is to create sweeps inside these projects using the configuration files given in `wandb_configurations` (folders are named according to the Projects they are subposed to be in). A sweep is created by clicking the broom icon inside a project and then "Create Sweep". Paste the contents of the .yaml into the prompt and click "Create Sweep".
 
 Finally the wandb "file"-tree should follow this structure:
 
+```
 .
 └── wandb_account/
     ├── chemberta_version_and_loss_function_sweep/
@@ -79,3 +80,4 @@ Finally the wandb "file"-tree should follow this structure:
     │       ├── 100fold_CV_EC10_algae.yaml
     │       └── 100fold_CV_EC50EC10_algae.yaml
     └── Final_model
+```
