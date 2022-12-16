@@ -84,6 +84,8 @@ parameters:
     value: false
   save_final_epoch:
     value: false
+  save_CLS:
+    value: false
   seed:
     values:
       - 42

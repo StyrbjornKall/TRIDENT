@@ -93,8 +93,10 @@ parameters:
   save_results:
     value: true
   save_model:
-    value: true
+    value: false
   save_final_epoch:
+    value: false
+  save_CLS:
     value: false
   seed:
     values:
