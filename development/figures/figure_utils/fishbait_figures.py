@@ -19,7 +19,7 @@ from sklearn.preprocessing import StandardScaler
 ## CHEMBERTA AND LOSS FUNCTION COMPARISON (FROM SWEEP)
 def PlotBaseModelLossfunResults(savepath):
 
-    df = pd.read_csv('../../data/results/basemodel_sweep_results_5x_CV_RDkit.zip', compression='zip')
+    df = pd.read_pickle('../../data/results/basemodel_sweep_results_5x_CV_RDkit.zip', compression='zip')
     df['Canonical_SMILES_figures'] = df.SMILES_Canonical_RDKit.apply(lambda x: GetCanonicalSMILESForFigures(x))
 
     fig = go.Figure()
@@ -77,7 +77,7 @@ def PlotBaseModelLossfunResults(savepath):
 
 
 ## RESIDUAL HISTOGRAM ONE PER SMILES
-def PlotKFoldResidualHistUsingWAvgPreds(savepath, name, endpoint):
+def PlotKFoldResidualHistUsingWAvgPreds(savepath, name, endpoint, species_group):
 
     predictions = GroupDataForPerformance(Preprocess10x10Fold(name=name))
     residuals = predictions.residuals
@@ -127,8 +127,8 @@ def PlotKFoldResidualHistUsingWAvgPreds(savepath, name, endpoint):
     
     if endpoint == 'EC50EC10':
         del fig
-        ec50_predictions = GroupDataForPerformance(Preprocess10x10Fold(name='EC50_fish'))
-        ec10_predictions = GroupDataForPerformance(Preprocess10x10Fold(name='EC10_fish'))
+        ec50_predictions = GroupDataForPerformance(Preprocess10x10Fold(name=f'EC50_{species_group}'))
+        ec10_predictions = GroupDataForPerformance(Preprocess10x10Fold(name=f'EC10_{species_group}'))
         combo_predictions = GroupDataForPerformance(Preprocess10x10Fold(name=name))
         
         ec50residuals = predictions[(combo_predictions.endpoint=='EC50') & (combo_predictions.Canonical_SMILES_figures.isin(ec50_predictions.Canonical_SMILES_figures))].residuals
@@ -305,7 +305,7 @@ def PlotKFoldComboBarUsingWAvgPreds(savepath, combomodel, species_group):
     
     fig.update_layout(title='Mean & Median AE 10x10 fold CV')
     fig.update_yaxes(title_text="Absolute Prediction Error (fold change)")    
-    UpdateFigLayout(fig, None, [1,6],[1000,700],1, 'topright')
+    UpdateFigLayout(fig, None, [1,8],[1000,700],1, 'topright')
 
     fig.update_layout(barmode='group')
     fig.show(renderer='png')
@@ -317,13 +317,9 @@ def PlotKFoldComboBarUsingWAvgPreds(savepath, combomodel, species_group):
     
 
 ## PRINCIPAL COMPONENT ANALYSIS (PCA)
-def PlotPCA_CLSProjection(savepath, endpoint, flipaxis):
-    if endpoint == 'EC50':
-        results = pd.read_csv('../../data/results/EC50_fish_final_model_training_data_RDkit.zip', compression='zip')
-    elif endpoint == 'EC10':
-        results = pd.read_csv('../../data/results/EC10_fish_final_model_training_data_RDkit.zip', compression='zip')
-    elif endpoint == 'EC50EC10':
-        results = pd.read_csv('../../data/results/EC50EC10_fish_final_model_training_data_RDkit.zip', compression='zip')
+def PlotPCA_CLSProjection(savepath, endpoint, species_group, flipxaxis, flipyaxis):
+
+    results = pd.read_pickle(f'../../data/results/{endpoint}_{species_group}_final_model_training_data_RDkit.zip', compression='zip')
     results['Canonical_SMILES_figures'] = results.SMILES_Canonical_RDKit.apply(lambda x: GetCanonicalSMILESForFigures(x))
     results['labels'] = results['mgperL']
     CLS_dict = dict(zip(results.Canonical_SMILES_figures, results.CLS_embeddings.tolist()))
@@ -331,13 +327,10 @@ def PlotPCA_CLSProjection(savepath, endpoint, flipaxis):
     results.drop(columns=['CLS_embeddings'], inplace=True)
 
     results = GroupDataForPerformance(results)
-    results = results.groupby(['Canonical_SMILES_figures','cmpdname'], as_index=False).median(numeric_only=True)
+    results = results.groupby(['Canonical_SMILES_figures','cmpdname','endpoint'], as_index=False).median(numeric_only=True)
     results['L1Error'] = results.residuals.abs()
     results['CLS_embeddings'] = results.Canonical_SMILES_figures.apply(lambda x: CLS_dict[x])
 
-    col = 'Canonical_SMILES_figures'
-
-    results.CLS_embeddings = results.CLS_embeddings.apply(lambda x: json.loads(x))
     embeddings = np.array(results.CLS_embeddings.tolist())
     #embeddings_scaled = StandardScaler().fit_transform(embeddings)
 
@@ -345,20 +338,24 @@ def PlotPCA_CLSProjection(savepath, endpoint, flipaxis):
     pca = pd.DataFrame(data = pcomp.fit_transform(embeddings), columns = ['pc1', 'pc2','pc3'])
     results = pd.concat([results, pca], axis=1)
 
-    hover = (results[col]+'<br>'+
-    results['cmpdname'])
-
-    fig = make_subplots(rows=1, cols=1,
-        subplot_titles=(['CLS embedding 2D PCA projection']),
-        horizontal_spacing=0.02)
 
     if (endpoint == 'EC50') or (endpoint == 'EC10'):
+
+        hover = (results['Canonical_SMILES_figures']+'<br>'+results['cmpdname'])
+
+        fig = make_subplots(rows=1, cols=1,
+        subplot_titles=(['CLS embedding 2D PCA projection']),
+        horizontal_spacing=0.02)
         # for EC10 or EC50
-        if flipaxis:
+        if flipxaxis:
             x = results.pc1*-1
         else:
             x = results.pc1
-        fig.add_trace(go.Scatter(x=x, y=results.pc2, 
+        if flipyaxis:
+            y = results.pc2*-1
+        else:
+            y = results.pc2
+        fig.add_trace(go.Scatter(x=x, y=y, 
                         mode='markers',
                         text=hover,
                         marker=dict(colorscale=[(0, '#67000d'),
@@ -378,16 +375,21 @@ def PlotPCA_CLSProjection(savepath, endpoint, flipaxis):
                         row=1, col=1)
 
     else:
+        fig = make_subplots(rows=1, cols=2,
+        subplot_titles=(['CLS embedding 2D PCA projection']),
+        horizontal_spacing=0.02)
         # Combo model
         ec50 = results[results.endpoint=='EC50']
         ec10 = results[results.endpoint=='EC10']
+        hover50 = (ec50['Canonical_SMILES_figures']+'<br>'+ec50['cmpdname'])
+        hover10 = (ec10['Canonical_SMILES_figures']+'<br>'+ec10['cmpdname'])
         fig.add_trace(go.Scatter(x=ec50.pc1, y=ec50.pc2, 
                         mode='markers',
-                        text=hover,
+                        text=hover50,
                         name='EC50',
                         marker=dict(colorscale='Viridis',
-                                    cmax=max(results.labels),
-                                    cmin=min(results.labels),
+                                    cmax=max(ec50.labels),
+                                    cmin=min(ec50.labels),
                                     color=ec50.labels,
                                     size=5,
                                     colorbar=dict(title=''),
@@ -397,17 +399,17 @@ def PlotPCA_CLSProjection(savepath, endpoint, flipaxis):
 
         fig.add_trace(go.Scatter(x=ec10.pc1, y=ec10.pc2, 
                         mode='markers',
-                        text=hover,
+                        text=hover10,
                         name='EC10',
                         marker=dict(colorscale='Inferno',
-                                    cmax=max(results.labels),
-                                    cmin=min(results.labels),
+                                    cmax=max(ec10.labels),
+                                    cmin=min(ec10.labels),
                                     color=ec10.labels,
                                     size=5,
                                     colorbar=dict(title='', x = 1.15),
                                     line_width=1,
                                     line_color='Black')),
-                        row=1, col=1)
+                        row=1, col=2)
 
     fig.update_xaxes(title_text=f"PC1 {np.round(100*pcomp.explained_variance_ratio_[0],1)}%",
         row=1, col=1)
@@ -416,6 +418,7 @@ def PlotPCA_CLSProjection(savepath, endpoint, flipaxis):
 
     UpdateFigLayout(fig,None, None, [1000,800],1)
     if endpoint == 'EC50EC10':
+        UpdateFigLayout(fig,None, None, [2000,800],1)
         fig.update_layout(legend=dict(
             yanchor="bottom",
             y=0.01,
@@ -701,7 +704,7 @@ def PlotQSARCoverageComboBar(savepath, inside_AD, species_group):
 
     for endpoint in ['EC50', 'EC10']:
         ECOSAR, VEGA, TEST = LoadQSAR(endpoint=endpoint, species_group=species_group) 
-        ECOSAR_tmp, TEST_tmp, VEGA_tmp = PrepareQSARData(ECOSAR, TEST, VEGA, inside_AD=inside_AD, remove_experimental=False)
+        ECOSAR_tmp, TEST_tmp, VEGA_tmp = PrepareQSARData(ECOSAR, TEST, VEGA, inside_AD=inside_AD, remove_experimental=False, species_group=species_group)
         avg_predictions = Preprocess10x10Fold(endpoint+f"_{species_group}")
         all_smiles = avg_predictions.Canonical_SMILES_figures.drop_duplicates().tolist()
 
@@ -777,12 +780,23 @@ def PlotQSARComp3inOne(savepath, endpoint,inside_AD, use_weighted_avg):
         'VEGA': [colors_specific['VEGA'], colors_specific['VEGA'], colors_specific['VEGA']],
         'TEST': [colors_specific['TEST'], colors_specific['TEST'], colors_specific['TEST']]}
 
+    # Get intersect
+    if endpoint == 'EC50':
+        fish = fish[~((fish.ECOSAR.isna() | fish.VEGA.isna()) | fish.TEST.isna())]
+        invertebrates = invertebrates[~((invertebrates.ECOSAR.isna() | invertebrates.VEGA.isna()) | invertebrates.TEST.isna())]
+        algae = algae[~(algae.ECOSAR.isna() | algae.VEGA.isna())] 
+    if endpoint == 'EC10':
+        fish = fish[~(fish.ECOSAR.isna() | fish.VEGA.isna())]
+        invertebrates = invertebrates[~(invertebrates.ECOSAR.isna() | invertebrates.VEGA.isna())]
+        algae = algae[~(algae.ECOSAR.isna() | algae.VEGA.isna())] 
+
     fig = go.Figure()
 
     xgroups = ['fish','invertebrates', 'algae']
     QSARs = ['fishbAIT','ECOSAR','VEGA','TEST']
 
     for i, qsar_tool in enumerate(QSARs):
+        
         try:
             fish_L1Error = abs(fish[f'{qsar_tool}_residuals'])
             invert_L1Error = abs(invertebrates[f'{qsar_tool}_residuals'])
@@ -811,6 +825,10 @@ def PlotQSARComp3inOne(savepath, endpoint,inside_AD, use_weighted_avg):
                     line_color='Black'),
         ))
 
+    print(f'''
+    SMILES in fish: {len(set(fish.Canonical_SMILES_figures))}
+    SMILES in invertebrates: {len(set(invertebrates.Canonical_SMILES_figures))}
+    SMILES in algae: {len(set(algae.Canonical_SMILES_figures))}''')
 
     fig.update_yaxes(title_text='Absolute Prediction Error (fold change)', tickfont = dict(size=FONTSIZE))
 
@@ -829,7 +847,7 @@ def PlotQSARComp3inOne(savepath, endpoint,inside_AD, use_weighted_avg):
 def GetQSARPredictionForSpecies(name, endpoint, species_group, durations, inside_AD):
     avg_predictions = Preprocess10x10Fold(name=name)
     ECOSAR, VEGA, TEST = LoadQSAR(endpoint=endpoint, species_group=species_group)
-    ECOSAR, TEST, VEGA = PrepareQSARData(ECOSAR, TEST, VEGA, inside_AD=inside_AD, remove_experimental=True)
+    ECOSAR, TEST, VEGA = PrepareQSARData(ECOSAR, TEST, VEGA, inside_AD=inside_AD, remove_experimental=True, species_group=species_group)
     TEST_dict = dict(zip(TEST.Canonical_SMILES_figures, TEST.value))
     VEGA_dict = dict(zip(VEGA.Canonical_SMILES_figures, VEGA.value))
     ECOSAR_dict = dict(zip(ECOSAR.Canonical_SMILES_figures, ECOSAR.value))

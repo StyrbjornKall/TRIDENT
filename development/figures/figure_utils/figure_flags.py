@@ -3,8 +3,8 @@ test_col = '#fef0d9'
 vega_col = '#fdcc8a'
 model_col = '#9bb8e8'
 
-ec50 = '#c2e699'
-ec10 = '#78c679'
+ec50 = '#fff7bc'
+ec10 = '#fec44f'
 ec50ec10 = '#8856a7'
 
 # invertebrates
