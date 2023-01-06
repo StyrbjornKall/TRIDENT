@@ -6,10 +6,12 @@
 This repository contains all code and data necessary to replicate the results presented in the publication L!.
 
 ## How to Use
-The models in this repository can also be used directly through our online web application:
-[fishbAIT](https://fishbait.streamlit.app/)
+To replicate the study, refer to the documentation under the `development` section.
 
-For very extensive predictions (>100 MB) consider cloning this repo and follow the tutorials under `tutorials`.
+To use the trained models presented in the study, refer to our website:
+[fishbAIT](https://fishbait.streamlit.app/) (requires no knowledge of programming).
+
+For very extensive predictions (>100 MB) consider cloning this repo and follow the tutorials under `tutorials` (requires basic python understanding).
 
 Clone this repository:
 ```bash 
@@ -17,24 +19,25 @@ git clone https://github.com/StyrbjornKall/fishbAIT
 ```
 
 ## Dependencies
-
-`fishbait_development.yml` and `fishbait_development.txt`
+**Replicate entire study**
 Contains all packages required to reproduce this study:
 ```bash
 conda env create -f fishbait_development_environment.yml
 ```
 
-`fishbait_inference.yml` and `fishbait_inference.txt`
+**Use models for inference**
 Contains only the packages required for making predictions using the fine-tuned models and skips development-only packages:
 ```bash
 conda env create -f fishbait_inference_environment.yml
 ```
 
 ## Layout
-`data` contains all preprocessed data used for training our fine-tuned EC50, EC10 and combined model.
+`data` contains all preprocessed data used for training our nine fine-tuned EC50, EC10 and combined models. Also contains QSAR comparison data. 
 
 `development` contains all code needed to replicate the findings presented in the publication.
 
-`fishbAIT` houses the fine-tuned model weigths.
+`fishbAIT` contains the nine fine-tuned Deep Neural Network modules for the models. For the fine-tuned transformer (RoBERTa) modules, refer to [Huggingface model-hub](https://huggingface.co/StyrbjornKall).
 
-`tutorials` contains tutorial notebooks for running inference using the fine-tuned models.
+`tutorials` contains very simple tutorial notebooks for running inference using the fine-tuned models. Written in order to minimize programmatic interference so that very basic python knowledge suffice. 
+
+*Refer to each sections README for further descriptions.*

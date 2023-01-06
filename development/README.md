@@ -1,16 +1,14 @@
 # `development`
 
-Contains all the scripts used to generate the fine-tuned models presented in the publication. The notebooks used for model development depend on wandb keeping track of which parameters are used for each model. This includes which data to use for training, how to split data into training and validation, which hyperparameters to use during training, modifications to the model architecture etc.. In other words, for these scripts to function properly, a wandb repository is required where the user is required to build a file tree similar to what was used during development. For a discription on this, refer to `wandb_configurations` section below.
+Contains all the scripts used to generate all results and fine-tuned models presented in the publication. The notebooks used for model development depend on weights and biases (wandb) keeping track of which parameters are used for each model. This includes which data to use for training, how to split data into training and validation, which hyperparameters to use during training, modifications to the model architecture etc.. In other words, for these scripts to function properly, a wandb repository is required where the user is required to build a file tree similar to what was used during development. For a discription on this, refer to *wandb_configurations* section below.
 
 ## `development_utils`
 Contains utility scripts for data preprocessing and model building and training.
 
 ## `figures`
-
 Contains script for generating figures presented in the publication.
 
 ## `wandb_configurations`
-
 As mentioned the development scripts depend on wandb. This folder contains all weights and biases configurations necessary for running each hyperparameter/parameter sweep presented in the publication. Note that this works only using weights and biases and requires already set up directories in wandb in order to be fully functional. 
 
 In order to reproduce the sweeps, sweeps must be configured as per the configuration files attached in this directory.
