@@ -100,7 +100,7 @@ class fishbAIT_for_inference:
         elif isinstance(SMILES, list):
             SMILES = pd.DataFrame(SMILES, columns=['SMILES'])
 
-        SMILES['exposure_duration'] = exposure_duration
+        SMILES['exposure_duration'] = np.log10(exposure_duration)
         SMILES['endpoint'] = endpoint
         SMILES['effect'] = effect
 
