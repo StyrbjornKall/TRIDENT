@@ -7,11 +7,16 @@ from plotly.subplots import make_subplots
 from sklearn.decomposition import PCA
 from inference_utils.pytorch_data_utils import check_training_data
 
+def __formathover(df):
+    formatted_hover = ''''''
+    for col in df.columns:
+        formatted_hover += (col + ':<br>' + df[col].astype(str) + '<br>')
+    return formatted_hover
 
 def PlotPCA_CLSProjection(model_type, endpoint, effect, species_group, show_all_predictions, inference_df=None):
 
-    all_preds = pd.read_pickle(f'../data/predictions/combined_predictions.pkl.zip', compression='zip')
-    cls_df = pd.read_pickle(f'../data/predictions/{model_type}_{species_group}_CLS_embeddings.pkl.zip', compression='zip')
+    all_preds = pd.read_pickle(f'../data/tutorials/predictions/combined_predictions_and_errors.pkl.zip', compression='zip')
+    cls_df = pd.read_pickle(f'../data/tutorials/predictions/{model_type}_{species_group}_CLS_embeddings.pkl.zip', compression='zip')
     all_preds = all_preds.merge(cls_df, on='SMILES_Canonical_RDKit')
     embeddings = np.array(all_preds.CLS_embeddings.tolist()).astype(np.float32)
     # If we want to plot predicted chemicals from streamlit prediction
@@ -29,13 +34,12 @@ def PlotPCA_CLSProjection(model_type, endpoint, effect, species_group, show_all_
     train_endpoint_preds = all_preds[all_preds[f'{model_type}_{species_group}_{endpoint}_{effect} endpoint match'].astype(bool)]
     remaining_preds = all_preds[(~all_preds[f'{model_type}_{species_group}_{endpoint}_{effect} effect match'].astype(bool)) | (~all_preds[f'{model_type}_{species_group}_{endpoint}_{effect} endpoint match'].astype(bool))]
 
-
     fig = make_subplots(rows=1, cols=1,
         subplot_titles=(['']),
         horizontal_spacing=0.02)
 
     if show_all_predictions:
-        hover = (remaining_preds['SMILES_Canonical_RDKit'])
+        hover = __formathover(remaining_preds[['SMILES_Canonical_RDKit', f'{model_type}_{species_group} L1Error']])
         fig.add_trace(go.Scatter(x=remaining_preds.pc1, y=remaining_preds.pc2, 
                         mode='markers',
                         text=hover,
@@ -54,7 +58,7 @@ def PlotPCA_CLSProjection(model_type, endpoint, effect, species_group, show_all_
                         )),
                         row=1, col=1)
 
-    hover = (train_endpoint_preds['SMILES_Canonical_RDKit'])
+    hover = __formathover(train_endpoint_preds[['SMILES_Canonical_RDKit', f'{model_type}_{species_group} L1Error']])
     fig.add_trace(go.Scatter(x=train_endpoint_preds.pc1, y=train_endpoint_preds.pc2, 
                     mode='markers',
                     text=hover,
@@ -75,7 +79,7 @@ def PlotPCA_CLSProjection(model_type, endpoint, effect, species_group, show_all_
                     )),
                     row=1, col=1)
     
-    hover = (train_effect_preds['SMILES_Canonical_RDKit'])
+    hover = __formathover(train_effect_preds[['SMILES_Canonical_RDKit', f'{model_type}_{species_group} L1Error']])
     fig.add_trace(go.Scatter(x=train_effect_preds.pc1, y=train_effect_preds.pc2, 
                     mode='markers',
                     text=hover,
