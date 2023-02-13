@@ -120,11 +120,11 @@ class fishbAIT_for_inference:
         for _, batch in enumerate(tqdm(loader)):
             with torch.no_grad():
                 pred, cls = self.fishbAIT_model(*batch.values())
-                preds.append(pred.numpy())
-                cls_embeddings.append(cls.numpy())
+                preds.append(pred.numpy().astype(np.float32))
+                cls_embeddings.append(cls.numpy().astype(np.float32))
 
         preds = np.concatenate(preds, axis=0)
-        cls_embeddings = np.concatenate(cls_embeddings, axis=0)
+        cls_embeddings = np.concatenate(cls_embeddings, axis=0).tolist()
         SMILES['predictions log10(mg/L)'] = preds
         SMILES['predictions (mg/L)'] = 10**preds
         if return_cls_embeddings == True:
