@@ -182,7 +182,7 @@ def check_training_data_from_scratch(df, model_type, species_group, endpoint, ef
     endpoint_matches = []
     effect_matches = []
     
-    training_data = pd.read_pickle('../data/Preprocessed_complete_data_fixed_smiles_format.zip', compression='zip')
+    training_data = pd.read_pickle('../data/tutorials/predictions/Preprocessed_complete_data_fixed_smiles_format.zip', compression='zip')
     training_data = training_data.drop_duplicates(subset=['SMILES_Canonical_RDKit','species_group','endpoint','effect'])
     #filter out species match to limit search
     training_data = training_data[training_data.species_group == species_group]
@@ -216,7 +216,7 @@ def check_training_data(df, model_type, species_group, endpoint, effect):
     endpoint_matches = []
     effect_matches = []
     
-    all_preds = pd.read_pickle(f'../data/predictions/combined_predictions.pkl.zip', compression='zip')
+    all_preds = pd.read_pickle(f'../data/tutorials/predictions/combined_predictions.pkl.zip', compression='zip')
     all_preds = all_preds[['SMILES_Canonical_RDKit', f'{model_type}_{species_group}_{endpoint}_{effect} endpoint match', f'{model_type}_{species_group}_{endpoint}_{effect} effect match']]
  
     for SMILES in df.SMILES_Canonical_RDKit.drop_duplicates().tolist():
@@ -240,7 +240,7 @@ def check_closest_chemical(results, MODELTYPE, PREDICTION_SPECIES, PREDICTION_EN
     """
     Checks the closest chemical by means of cosine similarity of CLS-embedding inside our training set.
     """
-    training_data = pd.read_pickle('../data/predictions/Preprocessed_complete_data_fixed_smiles_format.zip', compression='zip')
+    training_data = pd.read_pickle('../data/tutorials/predictions/Preprocessed_complete_data_fixed_smiles_format.zip', compression='zip')
     if MODELTYPE == 'EC50EC10':
         PREDICTION_ENDPOINT = ('EC50','EC10')
     # Get training set
@@ -248,7 +248,7 @@ def check_closest_chemical(results, MODELTYPE, PREDICTION_SPECIES, PREDICTION_EN
     training_data = training_data.drop_duplicates(subset=['SMILES_Canonical_RDKit'])
     training_data = PreProcessDataForInference(training_data).GetCanonicalSMILES()
     
-    cls_df = pd.read_pickle(f'../data/predictions/{MODELTYPE}_{PREDICTION_SPECIES}_CLS_embeddings.pkl.zip', compression='zip')
+    cls_df = pd.read_pickle(f'../data/tutorials/predictions/{MODELTYPE}_{PREDICTION_SPECIES}_CLS_embeddings.pkl.zip', compression='zip')
     training_data = training_data.merge(cls_df, on='SMILES_Canonical_RDKit')
     cls_training_data = np.asarray(training_data.CLS_embeddings.tolist(), dtype=np.float32)
     cls = np.asarray(results.CLS_embeddings.tolist(), dtype=np.float32)
