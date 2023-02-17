@@ -168,9 +168,9 @@ class DNN_module(nn.Module):
         x = x.squeeze(1)
         return x
 
-class fishbAIT(nn.Module):
+class ecoCAIT(nn.Module):
     '''
-    # fishbAIT
+    # ecoCAIT
     Class to build Transformer and DNN structure. Supports maximum 4 hidden layers and RoBERTa transformers.
 
     ## Inputs
@@ -178,7 +178,7 @@ class fishbAIT(nn.Module):
     - dnn: an instance of the DNN_module class
     '''
     def __init__(self, roberta, dnn):
-        super(fishbAIT, self).__init__()
+        super(ecoCAIT, self).__init__()
         self.roberta = roberta 
         self.dnn = dnn
         

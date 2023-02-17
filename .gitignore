@@ -15,7 +15,7 @@ development/figures/figures_for_publication/venn/*.txt
 development/figures/figures_for_publication/EC10/*
 development/figures/figure_utils/__pycache__/*
 
-fishbAIT/*roberta_saved_weights.pt
+ecoCAIT/*roberta_saved_weights.pt
 
 development/wandb/*
 

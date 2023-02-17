@@ -2,7 +2,7 @@ import torch
 from transformers import AutoModel, AutoTokenizer
 import pandas as pd
 import numpy as np
-from inference_utils.model_utils import DNN_module, fishbAIT
+from inference_utils.model_utils import DNN_module, ecoCAIT
 from inference_utils.pytorch_data_utils import PreProcessDataForInference, BuildInferenceDataLoaderAndDataset
 from tqdm import tqdm
 from typing import List, TypeVar
@@ -10,7 +10,7 @@ PandasDataFrame = TypeVar('pandas.core.frame.DataFrame')
 PyTorchDataLoader = TypeVar('torch.utils.data.DataLoader')
 
 
-class fishbAIT_for_inference:
+class ecoCAIT_for_inference:
     def __init__(self, model_version: str='EC50EC10_fish', path_to_model_weights=None, device=None):
 
         self.model_version = model_version
@@ -69,18 +69,18 @@ class fishbAIT_for_inference:
         
         self.dnn = self.__loadcheckpoint__(dnn, self.model_version, self.path_to_model_weights)
 
-        self.fishbAIT_model = fishbAIT(self.roberta, self.dnn)
+        self.ecoCAIT_model = ecoCAIT(self.roberta, self.dnn)
 
     def __loadcheckpoint__(self, dnn, version, path):
         try:
             if path != None:
                 checkpoint_dnn = torch.load(f'{path}final_model_{version}_dnn_saved_weights.pt', map_location=self.device)
             else:
-                checkpoint_dnn = torch.load(f'../fishbAIT/final_model_{version}_dnn_saved_weights.pt', map_location=self.device)
+                checkpoint_dnn = torch.load(f'../ecoCAIT/final_model_{version}_dnn_saved_weights.pt', map_location=self.device)
         except:
             raise FileNotFoundError(
                 f'''Tried to load DNN module from path 
-                ../fishbAIT/final_model_{version}_dnn_saved_weights.pt
+                ../ecoCAIT/final_model_{version}_dnn_saved_weights.pt
                 but could not find file. Please specify the full path to the saved model.''')
 
         dnn.load_state_dict(checkpoint_dnn)
@@ -114,12 +114,12 @@ class fishbAIT_for_inference:
             variables=['SMILES_Canonical_RDKit', 'exposure_duration', 'OneHotEnc_concatenated'], 
             tokenizer = self.tokenizer).dataloader
 
-        self.fishbAIT_model.eval()
+        self.ecoCAIT_model.eval()
         preds = []
         cls_embeddings = []
         for _, batch in enumerate(tqdm(loader)):
             with torch.no_grad():
-                pred, cls = self.fishbAIT_model(*batch.values())
+                pred, cls = self.ecoCAIT_model(*batch.values())
                 preds.append(pred.numpy().astype(np.float32))
                 cls_embeddings.append(cls.numpy().astype(np.float32))
 
@@ -136,19 +136,19 @@ class fishbAIT_for_inference:
     def __check_allowed_prediction__(self, endpoint, effect):
 
         if endpoint not in self.list_of_endpoints:
-            raise RuntimeError(f'''You are trying to predict a `{endpoint}` endpoint with fishbAIT version {self.model_version}. 
-            This will not work. Reload a correct version of fishbAIT (i.e. `EC50`, `EC10` or `EC50EC10`) or specify correct endpoint.
+            raise RuntimeError(f'''You are trying to predict a `{endpoint}` endpoint with ecoCAIT version {self.model_version}. 
+            This will not work. Reload a correct version of ecoCAIT (i.e. `EC50`, `EC10` or `EC50EC10`) or specify correct endpoint.
             For additional information call: __help__''')
         
         if effect not in self.list_of_effects:
-            raise RuntimeError(f'''You are trying to predict a `{effect}` effect with fishbAIT version {self.model_version}. 
-            This will not work. Reload a correct version of fishbAIT (i.e. `EC50`, `EC10` or `EC50EC10`) or specify correct effect.
+            raise RuntimeError(f'''You are trying to predict a `{effect}` effect with ecoCAIT version {self.model_version}. 
+            This will not work. Reload a correct version of ecoCAIT (i.e. `EC50`, `EC10` or `EC50EC10`) or specify correct effect.
             For additional information call: __help__''')
 
     
     def __help__(self):
         print('''
-        This is a python class used to load and use the fine-tuned deep-learning model `fishbAIT` for environmental toxicity predictions in fish algae and aquatic invertebrates.
+        This is a python class used to load and use the fine-tuned deep-learning model `ecoCAIT` for environmental toxicity predictions in fish algae and aquatic invertebrates.
         The models have been trained on a large corpus of SMILES (chemical representations) on data collected from various sources.
 
         Currently there are nine models available for use. The models are divided by toxicity endpoint and by species group. The models are the following:
