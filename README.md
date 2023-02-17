@@ -1,7 +1,8 @@
-# fishbAIT - fish based AI Toxicity
+![ecoCAIT](ecocait-logo.svg)
+# 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-![fishbAITe model architecture](final_model.svg)
+![ecoCAIT model architecture](final_model.svg)
 ## Overview
 This repository contains all code and data necessary to replicate the results presented in the publication L!.
 
@@ -9,7 +10,7 @@ This repository contains all code and data necessary to replicate the results pr
 To replicate the study, refer to the documentation under the `development` section.
 
 To use the trained models presented in the study, refer to our website:
-[fishbAIT](https://fishbait.streamlit.app/) (requires no knowledge of programming).
+[ecoCAIT](https://ecocait.streamlit.app/) (requires no knowledge of programming).
 
 For very extensive predictions (>100 MB) consider cloning this repo and follow the tutorials under `tutorials` (requires basic python understanding).
 
@@ -22,13 +23,13 @@ git clone https://github.com/StyrbjornKall/fishbAIT
 **Replicate entire study**
 Contains all packages required to reproduce this study:
 ```bash
-conda env create -f fishbait_development_environment.yml
+conda env create -f ecocait_development_environment.yml
 ```
 
 **Use models for inference**
 Contains only the packages required for making predictions using the fine-tuned models and skips development-only packages:
 ```bash
-conda env create -f fishbait_inference_environment.yml
+conda env create -f ecocait_inference_environment.yml
 ```
 
 ## Layout
@@ -36,7 +37,7 @@ conda env create -f fishbait_inference_environment.yml
 
 `development` contains all code needed to replicate the findings presented in the publication.
 
-`fishbAIT` contains the nine fine-tuned Deep Neural Network modules for the models. For the fine-tuned transformer (RoBERTa) modules, refer to [Huggingface model-hub](https://huggingface.co/StyrbjornKall).
+`ecoCAIT` contains the nine fine-tuned Deep Neural Network modules for the models. For the fine-tuned transformer (RoBERTa) modules, refer to [Huggingface model-hub](https://huggingface.co/StyrbjornKall).
 
 `tutorials` contains very simple tutorial notebooks for running inference using the fine-tuned models. Written in order to minimize programmatic interference so that very basic python knowledge suffice. 
 
