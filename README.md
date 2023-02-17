@@ -2,7 +2,6 @@
 # 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-![ecoCAIT model architecture](final_model.svg)
 ## Overview
 This repository contains all code and data necessary to replicate the results presented in the publication L!.
 
@@ -42,3 +41,6 @@ conda env create -f ecocait_inference_environment.yml
 `tutorials` contains very simple tutorial notebooks for running inference using the fine-tuned models. Written in order to minimize programmatic interference so that very basic python knowledge suffice. 
 
 *Refer to each sections README for further descriptions.*
+
+## Architecture
+![ecoCAIT model architecture](final_model.svg)
