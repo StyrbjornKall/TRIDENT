@@ -26,9 +26,11 @@ def PlotPCA_CLSProjection(model_type, endpoint, effect, species_group, show_all_
 
     pcomp = PCA(n_components=2)
     pcac = pcomp.fit_transform(embeddings)
-    all_preds['pc1'], all_preds['pc2'] = pcac[:len(all_preds),0], pcac[:len(all_preds),1]
+    projections = pd.DataFrame({'pc1': pcac[:len(all_preds),0], 'pc2': pcac[:len(all_preds),1]})
+    all_preds = pd.concat([all_preds, projections], axis=1)
     if inference_df is not None:
-        inference_df['pc1'], inference_df['pc2'] = pcac[len(all_preds):,0], pcac[len(all_preds):,1]
+        projections = pd.DataFrame({'pc1': pcac[len(all_preds):,0], 'pc2': pcac[len(all_preds):,1]})
+        inference_df = pd.concat([inference_df, projections], axis=1)
 
     # Get which SMILES are training
     train_effect_preds = all_preds[all_preds[f'{model_type}_{species_group}_{endpoint}_{effect} effect match'].astype(bool)]
@@ -147,12 +149,13 @@ def PlotUMAP_CLSProjection(model_type, endpoint, effect, species_group, show_all
                       n_components = 2,
                       low_memory = True,
                       min_dist = min_dist)
-    
     umapc = umap_model.fit_transform(embeddings)
-    all_preds['u1'], all_preds['u2'] = umapc[:len(all_preds),0], umapc[:len(all_preds),1]
 
+    projections = pd.DataFrame({'u1': umapc[:len(all_preds),0], 'u2': umapc[:len(all_preds),1]})
+    all_preds = pd.concat([all_preds, projections], axis=1)
     if inference_df is not None:
-        inference_df['u1'], inference_df['u2'] = umapc[len(all_preds):,0], umapc[len(all_preds):,1]
+        projections = pd.DataFrame({'u1': umapc[len(all_preds):,0], 'u2': umapc[len(all_preds):,1]})
+        inference_df = pd.concat([inference_df, projections], axis=1)
 
     # Get which SMILES are training
     train_effect_preds = all_preds[all_preds[f'{model_type}_{species_group}_{endpoint}_{effect} effect match'].astype(bool)]
@@ -268,9 +271,11 @@ def PlotPaCMAP_CLSProjection(model_type, endpoint, effect, species_group, show_a
 
     pcomp = pacmap.PaCMAP()
     pcac = pcomp.fit_transform(embeddings)
-    all_preds['pacmap1'], all_preds['pacmap2'] = pcac[:len(all_preds),0], pcac[:len(all_preds),1]
+    projections = pd.DataFrame({'pacmap1': pcac[:len(all_preds),0], 'pacmap2': pcac[:len(all_preds),1]})
+    all_preds = pd.concat([all_preds, projections], axis=1)
     if inference_df is not None:
-        inference_df['pacmap1'], inference_df['pacmap2'] = pcac[len(all_preds):,0], pcac[len(all_preds):,1]
+        projections = pd.DataFrame({'pacmap1': pcac[len(all_preds):,0], 'pacmap2': pcac[len(all_preds):,1]})
+        inference_df = pd.concat([inference_df, projections], axis=1)
 
     # Get which SMILES are training
     train_effect_preds = all_preds[all_preds[f'{model_type}_{species_group}_{endpoint}_{effect} effect match'].astype(bool)]
