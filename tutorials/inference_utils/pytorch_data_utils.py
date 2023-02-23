@@ -242,9 +242,9 @@ def check_closest_chemical(results, MODELTYPE, PREDICTION_SPECIES, PREDICTION_EN
     """
     training_data = pd.read_pickle('../data/tutorials/predictions/Preprocessed_complete_data_fixed_smiles_format.zip', compression='zip')
     if MODELTYPE == 'EC50EC10':
-        PREDICTION_ENDPOINT = ('EC50','EC10')
+        PREDICTION_ENDPOINT = 'EC50,EC10'
     # Get training set
-    training_data = training_data[(training_data.species_group == PREDICTION_SPECIES) & (training_data.endpoint.isin(list((PREDICTION_ENDPOINT,))))]
+    training_data = training_data[(training_data.species_group == PREDICTION_SPECIES) & (training_data.endpoint.isin(PREDICTION_ENDPOINT.split(',')))]
     training_data = training_data.drop_duplicates(subset=['SMILES_Canonical_RDKit'])
     training_data = PreProcessDataForInference(training_data).GetCanonicalSMILES()
     
