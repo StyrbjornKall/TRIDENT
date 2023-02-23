@@ -216,7 +216,7 @@ def check_training_data(df, model_type, species_group, endpoint, effect):
     endpoint_matches = []
     effect_matches = []
     
-    all_preds = pd.read_pickle(f'../data/tutorials/predictions/combined_predictions.pkl.zip', compression='zip')
+    all_preds = pd.read_pickle(f'../data/tutorials/predictions/combined_predictions_and_errors.pkl.zip', compression='zip')
     all_preds = all_preds[['SMILES_Canonical_RDKit', f'{model_type}_{species_group}_{endpoint}_{effect} endpoint match', f'{model_type}_{species_group}_{endpoint}_{effect} effect match']]
  
     for SMILES in df.SMILES_Canonical_RDKit.drop_duplicates().tolist():
