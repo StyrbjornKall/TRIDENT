@@ -15,7 +15,7 @@ For very extensive predictions (>100 MB) consider cloning this repo and follow t
 
 Clone this repository:
 ```bash 
-git clone https://github.com/StyrbjornKall/fishbAIT
+git clone https://github.com/StyrbjornKall/ecoCAIT
 ```
 
 ## Dependencies
@@ -23,12 +23,6 @@ git clone https://github.com/StyrbjornKall/fishbAIT
 Contains all packages required to reproduce this study:
 ```bash
 conda env create -f ecocait_development_environment.yml
-```
-
-**Use models for inference**
-Contains only the packages required for making predictions using the fine-tuned models and skips development-only packages:
-```bash
-conda env create -f ecocait_inference_environment.yml
 ```
 
 ## Layout
