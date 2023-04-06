@@ -1,4 +1,4 @@
-# `data`
+## `data`
 All data is also available on [Zenodo](https://zenodo.org) along with the associated raw dataset. 
 
 ## `development`
