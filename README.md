@@ -8,9 +8,6 @@ This repository contains all code and data necessary to replicate the results pr
 ## How to Use
 To replicate the study, refer to the documentation under the `development` section.
 
-To use the trained models presented in the study, refer to our website:
-[ecoCAIT](https://ecocait.streamlit.app/) (requires no knowledge of programming).
-
 For very extensive predictions (>100 MB) consider cloning this repo and follow the tutorials under `tutorials` (requires basic python understanding).
 
 Clone this repository:
