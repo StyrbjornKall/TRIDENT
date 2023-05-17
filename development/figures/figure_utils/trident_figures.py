@@ -454,7 +454,7 @@ def PlotQSARcompBarUsingWAvgPredsInterersect(savepath, predictions, endpoint, sp
     mean_L1_model, median_L1_model, se_model, MAD_model = L1Error.mean(), L1Error.median(), L1Error.sem(), (abs(L1Error-L1Error.median())).median()/np.sqrt(len(L1Error))
 
     fig.add_trace(go.Bar(
-            name=f'ecoCAIT', x=xgroups, y=[10**mean_L1_model, 10**median_L1_model],
+            name=f'TRIDENT', x=xgroups, y=[10**mean_L1_model, 10**median_L1_model],
             error_y=dict(type='data',
             symmetric=False,
             array=[10**mean_L1_model*(10**se_model-1),10**median_L1_model*(10**MAD_model-1)],
@@ -500,13 +500,13 @@ def PlotQSARcompBarUsingWAvgPredsInterersect(savepath, predictions, endpoint, sp
 ## QSAR COMPARISON RESIDUAL SCATTER PLOT
 def PlotQSARresidualScatter(savepath, predictions, endpoint):
 
-    models = ['ecoCAIT', 'ECOSAR','VEGA','TEST']
+    models = ['TRIDENT', 'ECOSAR','VEGA','TEST']
 
     rows = [1,1,2,2]
     cols = [1,2,1,2]
     fig = make_subplots(rows=2, cols=2,
     subplot_titles=(
-    f'ecoCAIT n={len(predictions)}', 
+    f'TRIDENT n={len(predictions)}', 
     f'ECOSAR n={len(predictions["ECOSAR"].dropna())}', 
     f'VEGA n={len(predictions["VEGA"].dropna())}',
     f'T.E.S.T. n={len(predictions["TEST"].dropna())}'), shared_yaxes=True, shared_xaxes=True,
@@ -515,12 +515,12 @@ def PlotQSARresidualScatter(savepath, predictions, endpoint):
     for i, model in enumerate(models):
         tmp_df = predictions[~predictions[model].isna()]
 
-        if model != 'ecoCAIT':
+        if model != 'TRIDENT':
             residuals = tmp_df[f'{model}_residuals']
         else:
             residuals = tmp_df['residuals']
         AE = abs(residuals)
-        if model=='ecoCAIT':
+        if model=='TRIDENT':
             model=endpoint
         fig.add_trace(go.Scatter(x=tmp_df.labels, y=AE, 
                         mode='markers',
@@ -560,7 +560,7 @@ def PlotQSARresidualScatter(savepath, predictions, endpoint):
 ## QSAR COMPARISON RESIDUAL SCATTER PLOT
 def PlotQSARresidualScatterIntersect(savepath, predictions, endpoint):
 
-    models = ['ecoCAIT', 'ECOSAR','VEGA','TEST']
+    models = ['TRIDENT', 'ECOSAR','VEGA','TEST']
 
     rows = [1,1,2,2]
     cols = [1,2,1,2]
@@ -575,7 +575,7 @@ def PlotQSARresidualScatterIntersect(savepath, predictions, endpoint):
 
     fig = make_subplots(rows=2, cols=2,
     subplot_titles=(
-    f'ecoCAIT n={len(predictions)}', 
+    f'TRIDENT n={len(predictions)}', 
     f'ECOSAR n={len(predictions["ECOSAR"].dropna())}', 
     f'VEGA n={len(predictions["VEGA"].dropna())}',
     f'T.E.S.T. n={len(predictions["TEST"].dropna())}'), shared_yaxes=True, shared_xaxes=True,
@@ -584,12 +584,12 @@ def PlotQSARresidualScatterIntersect(savepath, predictions, endpoint):
     for i, model in enumerate(models):
         tmp_df = predictions[~predictions[model].isna()]
 
-        if model != 'ecoCAIT':
+        if model != 'TRIDENT':
             residuals = tmp_df[f'{model}_residuals']
         else:
             residuals = tmp_df['residuals']
         AE = abs(residuals)
-        if model=='ecoCAIT':
+        if model=='TRIDENT':
             model=endpoint
         fig.add_trace(go.Scatter(x=tmp_df.labels, y=AE, 
                         mode='markers',
@@ -627,13 +627,13 @@ def PlotQSARresidualScatterIntersect(savepath, predictions, endpoint):
 
 ## QSAR COMPARISON PREDICTIONS VS. LABELS SCATTER
 def PlotQSARcompScatter(savepath, predictions, endpoint):
-    models = ['ecoCAIT', 'ECOSAR','VEGA','TEST']
+    models = ['TRIDENT', 'ECOSAR','VEGA','TEST']
 
     rows = [1,1,2,2]
     cols = [1,2,1,2]
     fig = make_subplots(rows=2, cols=2,
     subplot_titles=(
-    f'ecoCAIT n={len(predictions)}', 
+    f'TRIDENT n={len(predictions)}', 
     f'ECOSAR n={len(predictions["ECOSAR"].dropna())}', 
     f'VEGA n={len(predictions["VEGA"].dropna())}',
     f'T.E.S.T. n={len(predictions["TEST"].dropna())}'), shared_yaxes=True, shared_xaxes=True,
@@ -651,7 +651,7 @@ def PlotQSARcompScatter(savepath, predictions, endpoint):
         except:
             line = ([-4,4],None,np.NaN)
         preds = tmp_df[model]
-        if model=='ecoCAIT':
+        if model=='TRIDENT':
             model=endpoint
 
         fig.add_trace(go.Scatter(x=tmp_df.labels, y=preds, 
@@ -697,7 +697,7 @@ def PlotQSARCoverageComboBar(savepath, inside_AD, species_group):
     else:
         AD='allpreds'
 
-    names = ['ecoCAIT','ECOSAR','VEGA','TEST']
+    names = ['TRIDENT','ECOSAR','VEGA','TEST']
     barcolorsec50 = [colors['EC50'],colors['ECOSAR'],colors['VEGA'], colors['TEST']]
     barcolorsec10 = [colors['EC10'],colors['ECOSAR'],colors['VEGA'], colors['TEST']]
     fig = go.Figure()
@@ -775,7 +775,7 @@ def PlotQSARComp3inOne(savepath, endpoint,inside_AD, use_weighted_avg):
         colors_specific['algae'] = '#78c679'
 
     colorpergroup = {
-        'ecoCAIT': [colors_specific['fish'], colors_specific['invertebrates'],colors_specific['algae']],
+        'TRIDENT': [colors_specific['fish'], colors_specific['invertebrates'],colors_specific['algae']],
         'ECOSAR': [colors_specific['ECOSAR'], colors_specific['ECOSAR'], colors_specific['ECOSAR']],
         'VEGA': [colors_specific['VEGA'], colors_specific['VEGA'], colors_specific['VEGA']],
         'TEST': [colors_specific['TEST'], colors_specific['TEST'], colors_specific['TEST']]}
@@ -793,7 +793,7 @@ def PlotQSARComp3inOne(savepath, endpoint,inside_AD, use_weighted_avg):
     fig = go.Figure()
 
     xgroups = ['fish','invertebrates', 'algae']
-    QSARs = ['ecoCAIT','ECOSAR','VEGA','TEST']
+    QSARs = ['TRIDENT','ECOSAR','VEGA','TEST']
 
     for i, qsar_tool in enumerate(QSARs):
         

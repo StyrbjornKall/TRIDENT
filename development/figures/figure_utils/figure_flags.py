@@ -20,4 +20,4 @@ ec50ec10 = '#8856a7'
 FONT = 'Serif'
 FONTSIZE = 30
 
-colors = {'ecoCAIT': model_col, 'ECOSAR': ecosar_col, 'TEST': test_col,'VEGA':vega_col, 'EC50':ec50, 'EC10':ec10, 'EC50EC10': ec50ec10}
+colors = {'TRIDENT': model_col, 'ECOSAR': ecosar_col, 'TEST': test_col,'VEGA':vega_col, 'EC50':ec50, 'EC10':ec10, 'EC50EC10': ec50ec10}

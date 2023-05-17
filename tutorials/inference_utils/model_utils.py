@@ -63,9 +63,9 @@ class DNN_module(nn.Module):
         x = x.squeeze(1)
         return x
 
-class ecoCAIT(nn.Module):
+class TRIDENT(nn.Module):
     '''
-    # ecoCAIT
+    # TRIDENT
     Class to build Transformer and DNN structure. Supports maximum 4 hidden layers and RoBERTa transformers.
 
     ## Inputs
@@ -73,7 +73,7 @@ class ecoCAIT(nn.Module):
     - dnn: an instance of the DNN_module class
     '''
     def __init__(self, roberta, dnn):
-        super(ecoCAIT, self).__init__()
+        super(TRIDENT, self).__init__()
         self.roberta = roberta 
         self.dnn = dnn
         

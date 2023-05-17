@@ -11,15 +11,15 @@ def Preprocess10x10Fold(name, uselogdata: bool=True, full_filepath = None):
         concatenated_results = pd.read_pickle(full_filepath, compression='zip')
         
     RescaleDuration(concatenated_results)
-    concatenated_results.rename(columns={'preds': 'ecoCAIT'}, inplace=True)
+    concatenated_results.rename(columns={'preds': 'TRIDENT'}, inplace=True)
     concatenated_results.loc[concatenated_results.endpoint == 'NOEC', 'endpoint'] = 'EC10'
-    concatenated_results['residuals'] = concatenated_results.labels-concatenated_results.ecoCAIT
+    concatenated_results['residuals'] = concatenated_results.labels-concatenated_results.TRIDENT
 
     if uselogdata:
         pass
     else:
         for col in concatenated_results.columns:
-            if col in ['mgperL','labels','ecoCAIT','ECOSAR','TEST','VEGA']:
+            if col in ['mgperL','labels','TRIDENT','ECOSAR','TEST','VEGA']:
                 try:
                     concatenated_results[col] = 10**concatenated_results[col]
                 except:
@@ -30,9 +30,9 @@ def Preprocess10x10Fold(name, uselogdata: bool=True, full_filepath = None):
         'cmpdname'], as_index=False, dropna=False).mean(numeric_only=True).drop(columns=['seed','fold_id','L1Error'])
     avg_predictions['prediction_std'] = concatenated_results.groupby(['CAS', 'organism', 'Duration_Value',
         'effect', 'mgperL','endpoint', 'SMILES','SMILES_Canonical_RDKit',
-        'cmpdname'], as_index=False, dropna=False).std(numeric_only=True).ecoCAIT
-    avg_predictions['residuals'] = avg_predictions.labels-avg_predictions.ecoCAIT
-    avg_predictions['ecoCAIT_residuals'] = avg_predictions['residuals']
+        'cmpdname'], as_index=False, dropna=False).std(numeric_only=True).TRIDENT
+    avg_predictions['residuals'] = avg_predictions.labels-avg_predictions.TRIDENT
+    avg_predictions['TRIDENT_residuals'] = avg_predictions['residuals']
     avg_predictions['CASRN'] = avg_predictions['CAS'].apply(lambda x: ''.join(x.split('-'))).astype(int)
     avg_predictions['Canonical_SMILES_figures'] = avg_predictions.SMILES_Canonical_RDKit.apply(lambda x: GetCanonicalSMILESForFigures(x))
     return avg_predictions
