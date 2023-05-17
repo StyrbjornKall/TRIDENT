@@ -19,7 +19,7 @@ git clone https://github.com/StyrbjornKall/TRIDENT
 **Replicate entire study**
 Contains all packages required to reproduce this study:
 ```bash
-conda env create -f ecocait_development_environment.yml
+conda env create -f trident_development_environment.yml
 ```
 
 ## Layout
