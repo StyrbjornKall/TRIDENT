@@ -3,7 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Overview
-This repository contains all code and data necessary to replicate the results presented in the publication !['Transformers enable accurate prediction of acute and chronic chemical toxicity in aquatic organisms'](https://www.biorxiv.org/content/10.1101/2023.04.17.537138v1) (*preprint*).
+This repository contains all code and data necessary to replicate the results presented in the publication [Transformers enable accurate prediction of acute and chronic chemical toxicity in aquatic organisms](https://www.biorxiv.org/content/10.1101/2023.04.17.537138v1) (*preprint*).
 
 ## How to Use
 To replicate the study, refer to the documentation under the `development` section.
