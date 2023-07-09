@@ -187,7 +187,7 @@ class PreprocessData():
 
 
 
-    def GetPubchemCID(self, drop_missing_entries: bool=True):
+    def GetPubchemCID(self, drop_missing_entries: bool=False):
         '''
         Retrieves PubChem CIDs by querying a locally stored dictionary using SMILES inside the dataset. 
         
