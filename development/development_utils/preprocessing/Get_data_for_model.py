@@ -261,7 +261,7 @@ class PreprocessData():
         '''
         metadata = pd.read_csv(os.path.join(__location__, 'Pubchem_metadata.csv'))
         self.dataframe.drop(columns=list(set(metadata.columns)&set(self.dataframe.columns)), inplace=True)
-        merged = pd.merge(self.dataframe, metadata, left_on='Pubchem_CID', right_on='cid')
+        merged = pd.merge(self.dataframe, metadata, left_on='Pubchem_CID', right_on='cid', how='outer').iloc[:len(self.dataframe)]
 
         merged = merged[self.dataframe.columns.tolist()+list_of_metadata] if list_of_metadata[0] != 'all' else merged
         self.dataframe = merged
