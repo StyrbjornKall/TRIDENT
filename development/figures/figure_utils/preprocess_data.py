@@ -6,7 +6,7 @@ RDLogger.DisableLog('rdApp.*')
 
 def Preprocess10x10Fold(name, uselogdata: bool=True, full_filepath = None):
     if full_filepath == None:
-        concatenated_results = pd.read_pickle(f'../../data/results/{name}_predictions_100x_CV_RDKit.zip', compression='zip')
+        concatenated_results = pd.read_pickle(f'../../data/results/{name}_predictions_100x_CV_RDKit.pkl.zip', compression='zip')
     else:
         concatenated_results = pd.read_pickle(full_filepath, compression='zip')
         
