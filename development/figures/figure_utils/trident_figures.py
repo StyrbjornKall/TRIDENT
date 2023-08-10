@@ -792,7 +792,7 @@ def PlotQSARComp3inOne(savepath, endpoint,inside_AD, use_weighted_avg):
 
     fig = go.Figure()
 
-    xgroups = ['fish','invertebrates', 'algae']
+    xgroups = [f'Fish {endpoint}',f'Aq. invertebrates {endpoint}',f'Algae {endpoint}']
     QSARs = ['TRIDENT','ECOSAR','VEGA','TEST']
 
     for i, qsar_tool in enumerate(QSARs):
@@ -845,6 +845,7 @@ def PlotQSARComp3inOne(savepath, endpoint,inside_AD, use_weighted_avg):
 
 
 def GetQSARPredictionForSpecies(name, endpoint, species_group, durations, inside_AD):
+    print(f'\nPreparing QSAR data for: {species_group} {endpoint}')
     avg_predictions = Preprocess10x10Fold(name=name)
     ECOSAR, VEGA, TEST = LoadQSAR(endpoint=endpoint, species_group=species_group)
     ECOSAR, TEST, VEGA = PrepareQSARData(ECOSAR, TEST, VEGA, inside_AD=inside_AD, remove_experimental=True, species_group=species_group)
