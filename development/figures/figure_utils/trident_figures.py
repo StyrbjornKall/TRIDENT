@@ -327,7 +327,7 @@ def PlotPCA_CLSProjection(savepath, endpoint, species_group, flipxaxis, flipyaxi
     results.drop(columns=['CLS_embeddings'], inplace=True)
 
     results = GroupDataForPerformance(results)
-    results = results.groupby(['Canonical_SMILES_figures','cmpdname','endpoint'], as_index=False).median(numeric_only=True)
+    results = results.groupby(['Canonical_SMILES_figures','cmpdname','endpoint'], as_index=False, dropna=False).median(numeric_only=True)
     results['L1Error'] = results.residuals.abs()
     results['CLS_embeddings'] = results.Canonical_SMILES_figures.apply(lambda x: CLS_dict[x])
 
@@ -344,7 +344,7 @@ def PlotPCA_CLSProjection(savepath, endpoint, species_group, flipxaxis, flipyaxi
         hover = (results['Canonical_SMILES_figures']+'<br>'+results['cmpdname'])
 
         fig = make_subplots(rows=1, cols=1,
-        subplot_titles=(['CLS embedding 2D PCA projection']),
+        subplot_titles=([f'{len(results)} CLS embedding 2D PCA projection']),
         horizontal_spacing=0.02)
         # for EC10 or EC50
         if flipxaxis:
@@ -376,7 +376,7 @@ def PlotPCA_CLSProjection(savepath, endpoint, species_group, flipxaxis, flipyaxi
 
     else:
         fig = make_subplots(rows=1, cols=2,
-        subplot_titles=(['CLS embedding 2D PCA projection']),
+        subplot_titles=([f'{len(results)} CLS embedding 2D PCA projection']),
         horizontal_spacing=0.02)
         # Combo model
         ec50 = results[results.endpoint=='EC50']
@@ -833,7 +833,7 @@ def PlotQSARComp3inOne(savepath, endpoint,inside_AD, use_weighted_avg):
     fig.update_yaxes(title_text='Absolute Prediction Error (fold change)', tickfont = dict(size=FONTSIZE))
 
     fig.update_layout(barmode='group')
-    UpdateFigLayout(fig, None, [1,28],[1000,700],1, 'topright')
+    UpdateFigLayout(fig, None, [1,15],[1000,700],1, 'topright')
     RescaleAxes(fig, False, False)
 
     fig.show(renderer='png')
