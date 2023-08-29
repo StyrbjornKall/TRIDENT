@@ -2,7 +2,7 @@ method: grid
 metric:
   goal: minimize
   name: Best Validation Median Loss Normalized
-name: 100-fold_CV_EC10
+name: 100-fold_CV_EC50EC10
 parameters:
   architecture:
     value: ChemBERTa+DNN
