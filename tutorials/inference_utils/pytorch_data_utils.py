@@ -175,14 +175,14 @@ class BuildInferenceDataLoaderAndDataset:
         self.dataloader = DataLoader(self.dataset, sampler=sampler, batch_size=self.bs, collate_fn=self.collator, num_workers=self.num_workers)
 
 
-def check_training_data_from_scratch(df, model_type, species_group, endpoint, effect):
+def check_training_data_from_scratch(df, model_type, species_group, endpoint, effect, path_to_data=None):
     """
     Function to check whether chemical is present in our training set (takes much longer to run compared to next function)
     """
     endpoint_matches = []
     effect_matches = []
     
-    training_data = pd.read_pickle('../data/tutorials/predictions/Preprocessed_complete_data_fixed_smiles_format.zip', compression='zip')
+    training_data = pd.read_excel('../data/development/Preprocessed_complete_data.xlsx', sheet_name='dataset')
     training_data = training_data.drop_duplicates(subset=['SMILES_Canonical_RDKit','species_group','endpoint','effect'])
     #filter out species match to limit search
     training_data = training_data[training_data.species_group == species_group]

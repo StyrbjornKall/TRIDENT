@@ -2,6 +2,7 @@ from .figure_flags import *
 from .preprocess_data import DurationBinner, GetCanonicalSMILESForFigures
 import pandas as pd 
 import numpy as np
+pd.options.mode.chained_assignment = None
 
 # MAIN FUNCTIONS
 ## LOAD QSAR TOOL DATASETS
@@ -65,20 +66,20 @@ def PrepareQSARData(ECOSAR, TEST, VEGA, inside_AD, remove_experimental, species_
         TEST_tmp.value = np.log10(TEST_tmp.value)
         TEST_tmp.replace([np.inf, -np.inf], np.nan, inplace=True)
         TEST_tmp = TEST_tmp[~TEST_tmp.value.isna()]
-        
-    if inside_AD:
-        ECOSAR_tmp = RemoveOutOfAD(ECOSAR_tmp, QSAR_type='ECOSAR')
-        VEGA_tmp = RemoveOutOfAD(VEGA_tmp, QSAR_type='VEGA')
-        try:
-            TEST_tmp = RemoveOutOfAD(TEST_tmp, QSAR_type='TEST')
-        except:
-            pass
 
     if remove_experimental:
         VEGA_tmp = RemoveExperimentalData(VEGA_tmp, QSAR_type='VEGA',species_group=species_group)
         ECOSAR_tmp = RemoveExperimentalData(ECOSAR_tmp, QSAR_type='ECOSAR',species_group=species_group)
         try:
             TEST_tmp = RemoveExperimentalData(TEST_tmp, QSAR_type='TEST', species_group=species_group)
+        except:
+            pass
+    
+    if inside_AD:
+        ECOSAR_tmp = RemoveOutOfAD(ECOSAR_tmp, QSAR_type='ECOSAR')
+        VEGA_tmp = RemoveOutOfAD(VEGA_tmp, QSAR_type='VEGA')
+        try:
+            TEST_tmp = RemoveOutOfAD(TEST_tmp, QSAR_type='TEST')
         except:
             pass
 
@@ -112,9 +113,9 @@ def MatchQSAR(df, ECOSAR_dict, TEST_dict, VEGA_dict, endpoint: str, species_grou
         df = DurationBinner(df, [170, 680, np.Inf])
         df = df[df.Duration_Value_binned.isin(duration)]
 
-    df.loc[:,'ECOSAR'] = df.Canonical_SMILES_figures.apply(lambda x: Match(x, ECOSAR_dict))
-    df.loc[:,'TEST'] = df.Canonical_SMILES_figures.apply(lambda x: Match(x, TEST_dict))
-    df.loc[:,'VEGA'] = df.Canonical_SMILES_figures.apply(lambda x: Match(x, VEGA_dict))
+    df['ECOSAR'] = df.Canonical_SMILES_figures.apply(lambda x: Match(x, ECOSAR_dict))
+    df['TEST'] = df.Canonical_SMILES_figures.apply(lambda x: Match(x, TEST_dict))
+    df['VEGA'] = df.Canonical_SMILES_figures.apply(lambda x: Match(x, VEGA_dict))
 
     if species_group == 'algae':
         df.loc[df['Duration_Value']==72, 'ECOSAR'] = None #Ecosar does not give outputs for 72h
@@ -140,15 +141,15 @@ def RemoveOutOfAD(df, QSAR_type: str):
         df = df[~df.CAS.isin(should_not_profile.CAS)]
         # Remove SMILES that are not profilable (from ECOSAR SMILES prediction)
         df = df[~df.Canonical_SMILES_figures.isin(should_not_profile.Canonical_SMILES_figures)]
-        print(f'Removed {tmp-len(df.Canonical_SMILES_figures.drop_duplicates())} SMILES outside AD')
+        print(f'Removed {tmp-len(df.Canonical_SMILES_figures.drop_duplicates())} SMILES outside AD ({QSAR_type})')
         return df
     elif QSAR_type == 'TEST':
-        print(f'Removed 0 outside AD rows')
+        print(f'Removed 0 outside AD rows ({QSAR_type})')
         return df
     elif QSAR_type == 'VEGA':
         tmp = len(df.Canonical_SMILES_figures.drop_duplicates())
         df = df[df.reliability != 'low']
-        print(f'Removed {tmp-len(df.Canonical_SMILES_figures.drop_duplicates())} SMILES outside AD')
+        print(f'Removed {tmp-len(df.Canonical_SMILES_figures.drop_duplicates())} SMILES outside AD ({QSAR_type})')
         return df
 
 ## REMOVE EXPERIMENTAL VALUES (TRAINING SET)
@@ -157,16 +158,16 @@ def RemoveExperimentalData(df, QSAR_type: str, species_group: str):
         tmp = len(df.Canonical_SMILES_figures.drop_duplicates())
         experimental_ecosar = pd.read_pickle(f'../../data/QSAR/ECOSAR_v2.2_{species_group}_experimental_CAS.zip', compression='zip')
         df = df[~df.CAS.isin(experimental_ecosar.ECOSAR_experimental_CAS.tolist())]
-        print(f'Removed {tmp-len(df.Canonical_SMILES_figures.drop_duplicates())} SMILES experimental')
+        print(f'Removed {tmp-len(df.Canonical_SMILES_figures.drop_duplicates())} SMILES experimental ({QSAR_type})')
     elif QSAR_type == 'TEST':
         tmp = len(df.Canonical_SMILES_figures.drop_duplicates())
         experimental_smiles = df[df.reliability == 'EXPERIMENTAL'].Canonical_SMILES_figures.unique().tolist()
         df = df[~df.Canonical_SMILES_figures.isin(experimental_smiles)]
-        print(f'Removed {tmp-len(df.Canonical_SMILES_figures.drop_duplicates())} SMILES experimental')
+        print(f'Removed {tmp-len(df.Canonical_SMILES_figures.drop_duplicates())} SMILES experimental ({QSAR_type})')
     elif QSAR_type == 'VEGA':
         tmp = len(df.Canonical_SMILES_figures.drop_duplicates())
         df = df[df.reliability != 'EXPERIMENTAL']
-        print(f'Removed {tmp-len(df.Canonical_SMILES_figures.drop_duplicates())} SMILES experimental')
+        print(f'Removed {tmp-len(df.Canonical_SMILES_figures.drop_duplicates())} SMILES experimental ({QSAR_type})')
         
     return df
 

@@ -215,7 +215,7 @@ def PlotKFoldResidualHistUsingWAvgPreds(savepath, name, endpoint, species_group)
 ## BARPLOT PERFORMANCE SINGLE MODELS (M50, M10)
 def PlotKFoldSingleBarUsingWAvgPreds(savepath, ec50_name, ec10_name):
 
-    errors=['Mean', 'Median']
+    errors=['Median', 'Mean']
     names = [ec50_name,ec10_name]
     colnames = ['EC50','EC10']
     fig = go.Figure()
@@ -226,11 +226,11 @@ def PlotKFoldSingleBarUsingWAvgPreds(savepath, ec50_name, ec10_name):
 
         fig.add_trace(go.Bar(
             name=name,
-            x=errors, y=[10**mean_L1, 10**median_L1],
+            x=errors, y=[10**median_L1, 10**mean_L1],
             error_y=dict(type='data',
             symmetric=False,
-            array=[10**mean_L1*(10**se-1),10**median_L1*(10**MAD-1)],
-            arrayminus=[10**mean_L1*(1-10**-se), 10**median_L1*(1-10**-MAD)]),
+            array=[10**median_L1*(10**MAD-1),10**mean_L1*(10**se-1)],
+            arrayminus=[10**median_L1*(1-10**-MAD), 10**mean_L1*(1-10**-se)]),
             marker_color=colors[colnames[i]],
             marker=dict(line_width=1,
             line_color='Black')
@@ -257,7 +257,7 @@ def PlotKFoldComboBarUsingWAvgPreds(savepath, combomodel, species_group):
     fig = go.Figure()
 
     endpoints = [f'EC50',f'EC10']
-    xgroups=[['Mean', 'Median', 'Mean', 'Median'], 
+    xgroups=[['Median', 'Mean', 'Median', 'Mean'], 
         ['EC50','EC50','EC10','EC10']]
     qsarbarcolors = [colors['EC50'],colors['EC50'],colors['EC10'],colors['EC10']]
 
@@ -268,13 +268,13 @@ def PlotKFoldComboBarUsingWAvgPreds(savepath, combomodel, species_group):
     for endpoint in endpoints:
         single_predictions = GroupDataForPerformance(Preprocess10x10Fold(name=endpoint+f'_{species_group}'))
         _, mean_L1, median_L1, se, MAD = single_predictions.residuals, single_predictions.L1error.mean(), single_predictions.L1error.median(), single_predictions.L1error.sem(), (abs(single_predictions.L1error-single_predictions.L1error.median())).median()/np.sqrt(len(single_predictions))
-        qsar += [mean_L1, median_L1]
-        qsarse += [se, MAD]
+        qsar += [median_L1, mean_L1]
+        qsarse += [MAD, se]
         combo_predictions = GroupDataForPerformance(Preprocess10x10Fold(name=combomodel))
         combo_predictions = combo_predictions[(combo_predictions.endpoint==endpoint) & (combo_predictions.Canonical_SMILES_figures.isin(single_predictions.Canonical_SMILES_figures))]
         _, mean_L1, median_L1, se, MAD = combo_predictions.residuals, combo_predictions.L1error.mean(), combo_predictions.L1error.median(), combo_predictions.L1error.sem(), (abs(combo_predictions.L1error-combo_predictions.L1error.median())).median()/np.sqrt(len(combo_predictions))
-        ecotoxformer += [mean_L1, median_L1]
-        ecotoxformerse += [se, MAD]
+        ecotoxformer += [median_L1, mean_L1]
+        ecotoxformerse += [MAD, se]
 
     qsar = np.array(qsar)
     qsarse = np.array(qsarse)
@@ -327,7 +327,7 @@ def PlotPCA_CLSProjection(savepath, endpoint, species_group, flipxaxis, flipyaxi
     results.drop(columns=['CLS_embeddings'], inplace=True)
 
     results = GroupDataForPerformance(results)
-    results = results.groupby(['Canonical_SMILES_figures','cmpdname','endpoint'], as_index=False).median(numeric_only=True)
+    results = results.groupby(['Canonical_SMILES_figures','cmpdname','endpoint'], as_index=False, dropna=False).median(numeric_only=True)
     results['L1Error'] = results.residuals.abs()
     results['CLS_embeddings'] = results.Canonical_SMILES_figures.apply(lambda x: CLS_dict[x])
 
@@ -344,7 +344,7 @@ def PlotPCA_CLSProjection(savepath, endpoint, species_group, flipxaxis, flipyaxi
         hover = (results['Canonical_SMILES_figures']+'<br>'+results['cmpdname'])
 
         fig = make_subplots(rows=1, cols=1,
-        subplot_titles=(['CLS embedding 2D PCA projection']),
+        subplot_titles=([f'{len(results)} CLS embedding 2D PCA projection']),
         horizontal_spacing=0.02)
         # for EC10 or EC50
         if flipxaxis:
@@ -376,7 +376,7 @@ def PlotPCA_CLSProjection(savepath, endpoint, species_group, flipxaxis, flipyaxi
 
     else:
         fig = make_subplots(rows=1, cols=2,
-        subplot_titles=(['CLS embedding 2D PCA projection']),
+        subplot_titles=([f'{len(results)} CLS embedding 2D PCA projection']),
         horizontal_spacing=0.02)
         # Combo model
         ec50 = results[results.endpoint=='EC50']
@@ -438,7 +438,7 @@ def PlotPCA_CLSProjection(savepath, endpoint, species_group, flipxaxis, flipyaxi
 def PlotQSARcompBarUsingWAvgPredsInterersect(savepath, predictions, endpoint, species_group):
 
     fig = go.Figure()
-    xgroups  = ['Mean','Median']
+    xgroups  = ['Median','Mean']
     QSARs = ['ECOSAR','VEGA','TEST']
 
     if endpoint == 'EC50':
@@ -454,11 +454,11 @@ def PlotQSARcompBarUsingWAvgPredsInterersect(savepath, predictions, endpoint, sp
     mean_L1_model, median_L1_model, se_model, MAD_model = L1Error.mean(), L1Error.median(), L1Error.sem(), (abs(L1Error-L1Error.median())).median()/np.sqrt(len(L1Error))
 
     fig.add_trace(go.Bar(
-            name=f'TRIDENT', x=xgroups, y=[10**mean_L1_model, 10**median_L1_model],
+            name=f'TRIDENT', x=xgroups, y=[10**median_L1_model, 10**mean_L1_model],
             error_y=dict(type='data',
             symmetric=False,
-            array=[10**mean_L1_model*(10**se_model-1),10**median_L1_model*(10**MAD_model-1)],
-            arrayminus=[10**mean_L1_model*(1-10**-se_model), 10**median_L1_model*(1-10**-MAD_model)]),
+            array=[10**median_L1_model*(10**MAD_model-1),10**mean_L1_model*(10**se_model-1)],
+            arrayminus=[10**median_L1_model*(1-10**-MAD_model), 10**mean_L1_model*(1-10**-se_model)]),
             marker_color = colors[endpoint],
             marker=dict(
                     line_width=1,
@@ -473,11 +473,11 @@ def PlotQSARcompBarUsingWAvgPredsInterersect(savepath, predictions, endpoint, sp
         mean_L1_qsar, median_L1_qsar, se_qsar, MAD_qsar = L1Error.mean(), L1Error.median(), L1Error.sem(), (abs(L1Error-L1Error.median())).median()/np.sqrt(len(L1Error))
             
         fig.add_trace(go.Bar(
-            name=f'{qsar_tool}', x=xgroups, y=[10**mean_L1_qsar, 10**median_L1_qsar],
+            name=f'{qsar_tool}', x=xgroups, y=[10**median_L1_qsar, 10**mean_L1_qsar],
             error_y=dict(type='data',
             symmetric=False,
-            array=[10**mean_L1_qsar*(10**se_qsar-1),10**median_L1_qsar*(10**MAD_qsar-1)],
-            arrayminus=[10**mean_L1_qsar*(1-10**-se_qsar), 10**median_L1_qsar*(1-10**-MAD_qsar)]),
+            array=[10**median_L1_qsar*(10**MAD_qsar-1),10**mean_L1_qsar*(10**se_qsar-1)],
+            arrayminus=[10**median_L1_qsar*(1-10**-MAD_qsar), 10**mean_L1_qsar*(1-10**-se_qsar)]),
             marker_color = colors[qsar_tool],
             marker=dict(
                     line_width=1,
@@ -792,7 +792,7 @@ def PlotQSARComp3inOne(savepath, endpoint,inside_AD, use_weighted_avg):
 
     fig = go.Figure()
 
-    xgroups = ['fish','invertebrates', 'algae']
+    xgroups = [f'Fish {endpoint}',f'Aq. invertebrates {endpoint}',f'Algae {endpoint}']
     QSARs = ['TRIDENT','ECOSAR','VEGA','TEST']
 
     for i, qsar_tool in enumerate(QSARs):
@@ -833,7 +833,7 @@ def PlotQSARComp3inOne(savepath, endpoint,inside_AD, use_weighted_avg):
     fig.update_yaxes(title_text='Absolute Prediction Error (fold change)', tickfont = dict(size=FONTSIZE))
 
     fig.update_layout(barmode='group')
-    UpdateFigLayout(fig, None, [1,28],[1000,700],1, 'topright')
+    UpdateFigLayout(fig, None, [1,15],[1000,700],1, 'topright')
     RescaleAxes(fig, False, False)
 
     fig.show(renderer='png')
@@ -845,6 +845,7 @@ def PlotQSARComp3inOne(savepath, endpoint,inside_AD, use_weighted_avg):
 
 
 def GetQSARPredictionForSpecies(name, endpoint, species_group, durations, inside_AD):
+    print(f'\nPreparing QSAR data for: {species_group} {endpoint}')
     avg_predictions = Preprocess10x10Fold(name=name)
     ECOSAR, VEGA, TEST = LoadQSAR(endpoint=endpoint, species_group=species_group)
     ECOSAR, TEST, VEGA = PrepareQSARData(ECOSAR, TEST, VEGA, inside_AD=inside_AD, remove_experimental=True, species_group=species_group)
