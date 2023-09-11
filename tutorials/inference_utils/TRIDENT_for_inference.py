@@ -112,16 +112,18 @@ class TRIDENT_for_inference:
         loader = BuildInferenceDataLoaderAndDataset(
             processed_data, 
             variables=['SMILES_Canonical_RDKit', 'exposure_duration', 'OneHotEnc_concatenated'], 
-            tokenizer = self.tokenizer).dataloader
+            tokenizer = self.tokenizer,
+            batch_size=256).dataloader
 
         self.TRIDENT_model.eval()
+        self.TRIDENT_model.to(self.device)
         preds = []
         cls_embeddings = []
         for _, batch in enumerate(tqdm(loader)):
             with torch.no_grad():
-                pred, cls = self.TRIDENT_model(*batch.values())
-                preds.append(pred.numpy().astype(np.float32))
-                cls_embeddings.append(cls.numpy().astype(np.float32))
+                pred, cls = self.TRIDENT_model(*batch.to(self.device).values())
+                preds.append(pred.cpu().numpy().astype(np.float32))
+                cls_embeddings.append(cls.cpu().numpy().astype(np.float32))
 
         preds = np.concatenate(preds, axis=0)
         cls_embeddings = np.concatenate(cls_embeddings, axis=0).tolist()
@@ -135,12 +137,12 @@ class TRIDENT_for_inference:
 
     def __check_allowed_prediction__(self, endpoint, effect):
 
-        if endpoint not in self.list_of_endpoints:
+        if len(set(endpoint) & set(self.list_of_endpoints)) == 0:
             raise RuntimeError(f'''You are trying to predict a `{endpoint}` endpoint with TRIDENT version {self.model_version}. 
             This will not work. Reload a correct version of TRIDENT (i.e. `EC50`, `EC10` or `EC50EC10`) or specify correct endpoint.
             For additional information call: __help__''')
         
-        if effect not in self.list_of_effects:
+        if len(set(effect) & set(self.list_of_effects)) == 0:
             raise RuntimeError(f'''You are trying to predict a `{effect}` effect with TRIDENT version {self.model_version}. 
             This will not work. Reload a correct version of TRIDENT (i.e. `EC50`, `EC10` or `EC50EC10`) or specify correct effect.
             For additional information call: __help__''')
