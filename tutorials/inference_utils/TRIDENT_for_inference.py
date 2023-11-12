@@ -62,8 +62,8 @@ class TRIDENT_for_inference:
             'EC50EC10_fish': 9
         }
     
-        self.roberta = AutoModel.from_pretrained(f'StyrbjornKall/{self.model_version}', use_auth_token='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')
-        self.tokenizer = AutoTokenizer.from_pretrained(f'StyrbjornKall/{self.model_version}', use_auth_token='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')
+        self.roberta = AutoModel.from_pretrained(f'StyrbjornKall/{self.model_version}')
+        self.tokenizer = AutoTokenizer.from_pretrained(f'StyrbjornKall/{self.model_version}')
 
         dnn = DNN_module(one_hot_enc_len=onehotencodinglengths[self.model_version], n_hidden_layers=3, layer_sizes=[700,500,300], dropout=0.2)
         
