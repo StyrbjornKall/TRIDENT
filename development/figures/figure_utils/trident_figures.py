@@ -922,6 +922,79 @@ def PlotCosineSimilarityAndL1Error(savepath, name, endpoint, species_group, quan
         fig.write_image(savepath+'.svg')
         fig.write_html(savepath+'.html')
 
+## CLS-EMBEDDING COSINE SIMILARITY BETWEEN VAILDATION AND TRAINING SET
+def PlotCosineSimilarityAndL1Error_med(savepath, name, endpoint, species_group, quantiles=[0,1/3,2/3,1], bins=None):
+
+    predictions = GroupDataForPerformance(Preprocess10x10Fold(name=name, uselogdata=True, get_cosine_similarity=True))
+    
+    fig = go.Figure()
+
+    colors_specific = {'ECOSAR': colors['ECOSAR'], 'VEGA': colors['VEGA'], 'TEST': colors['TEST']}
+    if endpoint == 'EC50':
+        colors_specific['fish'] = '#e0ecf4'
+        colors_specific['invertebrates'] = '#fff7bc'
+        colors_specific['algae'] = '#c2e699'
+    else:
+        colors_specific['fish'] = '#9ebcda'
+        colors_specific['invertebrates'] = '#fec44f'
+        colors_specific['algae'] = '#78c679'
+
+    if bins == None:
+        quantiles = predictions['Cosine_sim_avg'].quantile(quantiles).tolist()
+        bins = [round(quantiles[i], 2) for i in range(4)]
+
+    # Update the 'bin' column using pd.cut with the dynamically calculated bins
+    predictions['bin'] = pd.cut(predictions['Cosine_sim_avg'], bins)
+
+    #names = predictions['bin'].dtype.categories.values.astype(str)
+    height = predictions.groupby('bin')['L1error'].mean().fillna(0).sort_values().values
+    height_median = predictions.groupby('bin')['L1error'].median().fillna(0).sort_values().values
+    se = predictions.groupby('bin')['L1error'].sem().fillna(0).sort_values().values
+    MAD = predictions.groupby('bin')['L1error'].agg([('custom_metric', lambda x: (abs(x - x.median())).median() / np.sqrt(len(x)))]).sort_values('custom_metric')['custom_metric'].values
+    percentages = (predictions.groupby('bin')['bin'].count().fillna(0).values/len(predictions))
+    print(percentages)
+    names = [f'High similarity\n{round(100*percentages[0],1)} %',f'Intermediate similarity\n{round(100*percentages[1],1)} %',f'Low similarity\n{round(100*percentages[2],1)} %']
+    
+    fig.add_trace(go.Bar(
+                    name='Median',
+                    x=names, y=10**height_median,
+                    error_y=dict(type='data',
+                    symmetric=False,
+                    array=10**height_median*(10**MAD-1),
+                    arrayminus=10**height_median*(1-10**-MAD)),
+                    marker_color = colors_specific[species_group],
+                    marker=dict(
+                            line_width=1,
+                            line_color='Black'),
+                ))
+    
+    fig.add_trace(go.Bar(
+                    name="Mean",
+                    x=names, y=10**height,
+                    error_y=dict(type='data',
+                    symmetric=False,
+                    array=10**height*(10**se-1),
+                    arrayminus=10**height*(1-10**-se)),
+                    marker_color = colors_specific[species_group],
+                    marker=dict(
+                            line_width=1,
+                            line_color='Black'),
+                ))
+    
+    
+    fig.update_xaxes(title_text='Average Cosine Similarity', tickfont = dict(size=FONTSIZE))
+    fig.update_yaxes(title_text='Absolute Prediction Error (fold change)', tickfont = dict(size=FONTSIZE))
+    fig.update_layout(barmode='group')
+    UpdateFigLayout(fig, None, [1,17],[1000,700],1)
+    RescaleAxes(fig, False, False)
+
+    fig.show(renderer='png')
+
+    if savepath != None:
+        fig.write_image(savepath+'.png', scale=7)
+        fig.write_image(savepath+'.svg')
+        fig.write_html(savepath+'.html')
+
 def PlotCosineSimilarityAndL1ErrorAllInOne(savepath, endpoint, bins):
     fig = go.Figure()
 
