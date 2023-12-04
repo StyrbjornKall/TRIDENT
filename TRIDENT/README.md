@@ -1,4 +1,4 @@
-## `fishbAIT`
+## `TRIDENT`
 
 Contains the final EC50, EC10 and Combined EC50 and EC10 models generated in the publication. Each model comes trained on either fish, invertebrate or algae data. A model is loaded in two parts:
 
