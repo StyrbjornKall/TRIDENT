@@ -48,6 +48,8 @@ class TRIDENT_for_inference:
         self.list_of_effects = effectordering[self.model_version]
         self.list_of_endpoints = endpointordering[self.model_version]
 
+        self.text_placeholder = st.empty()
+
     def load_fine_tuned_model(self):
 
         onehotencodinglengths = {
@@ -61,32 +63,36 @@ class TRIDENT_for_inference:
             'EC10_fish': 7,
             'EC50EC10_fish': 9
         }
-    
-        self.roberta = AutoModel.from_pretrained(f'StyrbjornKall/{self.model_version}')
-        self.tokenizer = AutoTokenizer.from_pretrained(f'StyrbjornKall/{self.model_version}')
+
+        self.roberta = load_automodel(self.model_version)
+        self.tokenizer = load_autotokenizer()
 
         dnn = DNN_module(one_hot_enc_len=onehotencodinglengths[self.model_version], n_hidden_layers=3, layer_sizes=[700,500,300], dropout=0.2)
         
         self.dnn = self.__loadcheckpoint__(dnn, self.model_version, self.path_to_model_weights)
 
-        self.TRIDENT_model = TRIDENT(self.roberta, self.dnn)
+        self.TRIDENT_model = TRIDENT(self.roberta, self.dnn).to(self.device)
+
+        self.text_placeholder.empty()
+
 
     def __loadcheckpoint__(self, dnn, version, path):
+        print('Loading DNN... \n')
         try:
             if path != None:
                 checkpoint_dnn = torch.load(f'{path}final_model_{version}_dnn_saved_weights.pt', map_location=self.device)
             else:
-                checkpoint_dnn = torch.load(f'../TRIDENT/final_model_{version}_dnn_saved_weights.pt', map_location=self.device)
-        except:
-            raise FileNotFoundError(
-                f'''Tried to load DNN module from path 
-                ../TRIDENT/final_model_{version}_dnn_saved_weights.pt
-                but could not find file. Please specify the full path to the saved model.''')
+                path = f'./TRIDENT/final_model_{version}_dnn_saved_weights.pt'
+                checkpoint_dnn = torch.load(f'{path}', map_location=self.device)
+        except Exception as E:
+            raise E
+                #f'''Tried to load DNN module from path 
+                #{path}
+                #but could not find file. Please specify the full path to the saved model.''')
 
         dnn.load_state_dict(checkpoint_dnn)
         
         return dnn
-
 
     def predict_toxicity(self, SMILES, exposure_duration: int, endpoint: str, effect: str, return_cls_embeddings: bool=False):
         
@@ -100,7 +106,7 @@ class TRIDENT_for_inference:
         elif isinstance(SMILES, list):
             SMILES = pd.DataFrame(SMILES, columns=['SMILES'])
 
-        SMILES['exposure_duration'] = np.log10(exposure_duration)
+        SMILES['exposure_duration log10(h)'] = np.log10(exposure_duration)
         SMILES['endpoint'] = endpoint
         SMILES['effect'] = effect
 
@@ -111,18 +117,23 @@ class TRIDENT_for_inference:
 
         loader = BuildInferenceDataLoaderAndDataset(
             processed_data, 
-            variables=['SMILES_Canonical_RDKit', 'exposure_duration', 'OneHotEnc_concatenated'], 
+            variables=['SMILES_Canonical_RDKit', 'exposure_duration log10(h)', 'OneHotEnc_concatenated'], 
             tokenizer = self.tokenizer).dataloader
 
         self.TRIDENT_model.eval()
+        self.TRIDENT_model
         preds = []
         cls_embeddings = []
-        for _, batch in enumerate(tqdm(loader)):
+        n_batches = len(loader)
+        progress_bar = st.empty()
+        progress_bar.progress(0, text=f'Predicted: 0/{len(processed_data)} SMILES')
+        for i, batch in enumerate(loader):
             with torch.no_grad():
-                pred, cls = self.TRIDENT_model(*batch.values())
-                preds.append(pred.numpy().astype(np.float32))
-                cls_embeddings.append(cls.numpy().astype(np.float32))
-
+                pred, cls = self.TRIDENT_model(*batch.to(self.device).values())
+                preds.append(pred.cpu().numpy().astype(np.float32))
+                cls_embeddings.append(cls.cpu().numpy().astype(np.float32))
+                progress_bar.progress(int(100*(i+1)/n_batches), text=f'Predicted: {(i+1)*len(pred)}/{len(processed_data)} SMILES')
+        progress_bar.empty()
         preds = np.concatenate(preds, axis=0)
         cls_embeddings = np.concatenate(cls_embeddings, axis=0).tolist()
         SMILES['predictions log10(mg/L)'] = preds
