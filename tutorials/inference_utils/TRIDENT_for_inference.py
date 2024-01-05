@@ -48,8 +48,6 @@ class TRIDENT_for_inference:
         self.list_of_effects = effectordering[self.model_version]
         self.list_of_endpoints = endpointordering[self.model_version]
 
-        self.text_placeholder = st.empty()
-
     def load_fine_tuned_model(self):
 
         onehotencodinglengths = {
