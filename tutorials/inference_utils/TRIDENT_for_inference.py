@@ -64,17 +64,14 @@ class TRIDENT_for_inference:
             'EC50EC10_fish': 9
         }
 
-        self.roberta = load_automodel(self.model_version)
-        self.tokenizer = load_autotokenizer()
+        self.roberta = AutoModel.from_pretrained(f'StyrbjornKall/{self.model_version}')
+        self.tokenizer = AutoTokenizer.from_pretrained(f'StyrbjornKall/{self.model_version}')
 
         dnn = DNN_module(one_hot_enc_len=onehotencodinglengths[self.model_version], n_hidden_layers=3, layer_sizes=[700,500,300], dropout=0.2)
         
         self.dnn = self.__loadcheckpoint__(dnn, self.model_version, self.path_to_model_weights)
 
         self.TRIDENT_model = TRIDENT(self.roberta, self.dnn).to(self.device)
-
-        self.text_placeholder.empty()
-
 
     def __loadcheckpoint__(self, dnn, version, path):
         print('Loading DNN... \n')
@@ -85,10 +82,10 @@ class TRIDENT_for_inference:
                 path = f'./TRIDENT/final_model_{version}_dnn_saved_weights.pt'
                 checkpoint_dnn = torch.load(f'{path}', map_location=self.device)
         except Exception as E:
-            raise E
-                #f'''Tried to load DNN module from path 
-                #{path}
-                #but could not find file. Please specify the full path to the saved model.''')
+            raise FileNotFoundError(
+                f'''Tried to load DNN module from path 
+                ../TRIDENT/final_model_{version}_dnn_saved_weights.pt
+                but could not find file. Please specify the full path to the saved model.''')
 
         dnn.load_state_dict(checkpoint_dnn)
         
@@ -121,19 +118,14 @@ class TRIDENT_for_inference:
             tokenizer = self.tokenizer).dataloader
 
         self.TRIDENT_model.eval()
-        self.TRIDENT_model
         preds = []
         cls_embeddings = []
         n_batches = len(loader)
-        progress_bar = st.empty()
-        progress_bar.progress(0, text=f'Predicted: 0/{len(processed_data)} SMILES')
-        for i, batch in enumerate(loader):
+        for _, batch in enumerate(tqdm(loader)):
             with torch.no_grad():
                 pred, cls = self.TRIDENT_model(*batch.to(self.device).values())
                 preds.append(pred.cpu().numpy().astype(np.float32))
                 cls_embeddings.append(cls.cpu().numpy().astype(np.float32))
-                progress_bar.progress(int(100*(i+1)/n_batches), text=f'Predicted: {(i+1)*len(pred)}/{len(processed_data)} SMILES')
-        progress_bar.empty()
         preds = np.concatenate(preds, axis=0)
         cls_embeddings = np.concatenate(cls_embeddings, axis=0).tolist()
         SMILES['predictions log10(mg/L)'] = preds
