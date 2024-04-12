@@ -3,9 +3,11 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Overview
-This repository contains all code and data necessary to replicate the results presented in the publication [Transformers enable accurate prediction of acute and chronic chemical toxicity in aquatic organisms](https://www.biorxiv.org/content/10.1101/2023.04.17.537138v1) (*preprint*).
+This repository contains all code and data necessary to replicate the results presented in the publication [Transformers enable accurate prediction of acute and chronic chemical toxicity in aquatic organisms](https://doi.org/10.1126/sciadv.adk6669).
 
 ## How to Use
+To use the best trained models, refer to: [TRIDENT](https://trident.serve.scilifelab.se/)
+
 To replicate the study, refer to the documentation under the `development` section.
 
 For very extensive predictions (>100 MB) consider cloning this repo and follow the tutorials under `tutorials` (requires basic python understanding).
@@ -35,3 +37,17 @@ conda env create -f trident_development_environment.yml
 
 ## Architecture
 ![TRIDENT model architecture](final_model.svg)
+
+## Cite our models
+When using any of our models, please cite us!
+@article{
+doi:10.1126/sciadv.adk6669,
+author = {Mikael Gustavsson  and Styrbjörn Käll  and Patrik Svedberg  and Juan S. Inda-Diaz  and Sverker Molander  and Jessica Coria  and Thomas Backhaus  and Erik Kristiansson },
+title = {Transformers enable accurate prediction of acute and chronic chemical toxicity in aquatic organisms},
+journal = {Science Advances},
+volume = {10},
+number = {10},
+pages = {eadk6669},
+year = {2024},
+doi = {10.1126/sciadv.adk6669},
+URL = {https://www.science.org/doi/abs/10.1126/sciadv.adk6669}}
