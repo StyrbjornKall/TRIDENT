@@ -40,6 +40,7 @@ conda env create -f trident_development_environment.yml
 
 ## Cite our models
 When using any of our models, please cite us!
+```
 @article{
 doi:10.1126/sciadv.adk6669,
 author = {Mikael Gustavsson  and Styrbjörn Käll  and Patrik Svedberg  and Juan S. Inda-Diaz  and Sverker Molander  and Jessica Coria  and Thomas Backhaus  and Erik Kristiansson },
@@ -51,3 +52,4 @@ pages = {eadk6669},
 year = {2024},
 doi = {10.1126/sciadv.adk6669},
 URL = {https://www.science.org/doi/abs/10.1126/sciadv.adk6669}}
+```
