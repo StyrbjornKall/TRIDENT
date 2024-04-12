@@ -77,7 +77,7 @@ class TRIDENT_for_inference:
             if path != None:
                 checkpoint_dnn = torch.load(f'{path}final_model_{version}_dnn_saved_weights.pt', map_location=self.device)
             else:
-                path = f'./TRIDENT/final_model_{version}_dnn_saved_weights.pt'
+                path = f'../TRIDENT/final_model_{version}_dnn_saved_weights.pt'
                 checkpoint_dnn = torch.load(f'{path}', map_location=self.device)
         except Exception as E:
             raise FileNotFoundError(
@@ -86,6 +86,7 @@ class TRIDENT_for_inference:
                 but could not find file. Please specify the full path to the saved model.''')
 
         dnn.load_state_dict(checkpoint_dnn)
+        print('Model loaded.\n')
         
         return dnn
 
