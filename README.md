@@ -36,7 +36,7 @@ conda env create -f trident_development_environment.yml
 *Refer to each sections README for further descriptions.*
 
 ## Architecture
-![TRIDENT model architecture](final_model.svg)
+![TRIDENT model architecture](final_architecture.png)
 
 ## Cite our models
 When using any of our models, please cite us!
