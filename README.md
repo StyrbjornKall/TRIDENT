@@ -6,8 +6,13 @@
 This repository contains all code and data necessary to replicate the results presented in the publication [Transformers enable accurate prediction of acute and chronic chemical toxicity in aquatic organisms](https://doi.org/10.1126/sciadv.adk6669).
 
 ## How to Use
+### Web UI
 To use the best trained models, refer to: [TRIDENT](https://trident.serve.scilifelab.se/)
 
+### Docker locally
+https://hub.docker.com/repository/docker/styrbjornk/streamlit-app-trident-serve-v4.1/general
+
+### Locally
 To replicate the study, refer to the documentation under the `development` section.
 
 For very extensive predictions (>100 MB) consider cloning this repo and follow the tutorials under `tutorials` (requires basic python understanding).
