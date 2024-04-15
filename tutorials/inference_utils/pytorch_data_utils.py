@@ -174,6 +174,24 @@ class BuildInferenceDataLoaderAndDataset:
         sampler = SequentialSampler(self.dataset)
         self.dataloader = DataLoader(self.dataset, sampler=sampler, batch_size=self.bs, collate_fn=self.collator, num_workers=self.num_workers)
 
+def __loadtrainingdf__(MODELTYPE, PREDICTION_SPECIES, PREDICTION_ENDPOINT):
+    df = pd.read_pickle('../data/development/Preprocessed_complete_data.pkl.zip', compression='zip')
+    if MODELTYPE == 'EC50EC10':
+        PREDICTION_ENDPOINT = 'EC50,EC10'
+    # Get training set
+    df = df[(df.species_group == PREDICTION_SPECIES) & (df.endpoint.isin(PREDICTION_ENDPOINT.split(',')))]
+    df = df.drop_duplicates(subset=['SMILES_Canonical_RDKit','species_group','endpoint','effect'])    
+    df = PreProcessDataForInference(df).GetCanonicalSMILES()
+    return df
+
+def __loadpredictionsdf__():
+    df = pd.read_pickle(f'../data/tutorials/predictions/combined_predictions_and_errors.pkl.zip', compression='zip')
+    df = df.loc[:,~df.columns.duplicated()].copy()
+    return df
+
+def __loadCLSembeddings__(MODELTYPE, PREDICTION_SPECIES):
+    df = pd.read_pickle(f'../data/tutorials/predictions/{MODELTYPE}_{PREDICTION_SPECIES}_CLS_embeddings.pkl.zip', compression='zip')
+    return df
 
 def check_training_data_from_scratch(df, model_type, species_group, endpoint, effect, path_to_data=None):
     """
@@ -182,13 +200,7 @@ def check_training_data_from_scratch(df, model_type, species_group, endpoint, ef
     endpoint_matches = []
     effect_matches = []
     
-    training_data = pd.read_excel('../data/development/Preprocessed_complete_data.xlsx', sheet_name='dataset')
-    training_data = training_data.drop_duplicates(subset=['SMILES_Canonical_RDKit','species_group','endpoint','effect'])
-    #filter out species match to limit search
-    training_data = training_data[training_data.species_group == species_group]
-    #filter out endpoint to limit search
-    if model_type != 'EC50EC10':
-        training_data = training_data[training_data.endpoint == endpoint]
+    training_data = __loadtrainingdf__(model_type, species_group, endpoint)
 
     for SMILES in df.SMILES_Canonical_RDKit.drop_duplicates().tolist():
         data = training_data[training_data.SMILES_Canonical_RDKit==SMILES]
@@ -210,16 +222,14 @@ def check_training_data_from_scratch(df, model_type, species_group, endpoint, ef
     return df
 
 def check_training_data(df, model_type, species_group, endpoint, effect):
-    """
-    Check whether predicted chemical is present in our training set.
-    """
+
     endpoint_matches = []
     effect_matches = []
     
-    all_preds = pd.read_pickle(f'../data/tutorials/predictions/combined_predictions_and_errors.pkl.zip', compression='zip')
-    all_preds = all_preds[['SMILES_Canonical_RDKit', f'{model_type}_{species_group}_{endpoint}_{effect} endpoint match', f'{model_type}_{species_group}_{endpoint}_{effect} effect match']]
+    all_preds = __loadpredictionsdf__()
+    all_preds = all_preds[['SMILES_Canonical_RDKit',f'{model_type}_{species_group}_{endpoint}_{effect} endpoint match', f'{model_type}_{species_group}_{endpoint}_{effect} effect match']]
  
-    for SMILES in df.SMILES_Canonical_RDKit.drop_duplicates().tolist():
+    for SMILES in df.SMILES_Canonical_RDKit.tolist():
         data = all_preds[all_preds.SMILES_Canonical_RDKit==SMILES]
         if data.empty:
             endpoint_match=0
@@ -240,25 +250,41 @@ def check_closest_chemical(results, MODELTYPE, PREDICTION_SPECIES, PREDICTION_EN
     """
     Checks the closest chemical by means of cosine similarity of CLS-embedding inside our training set.
     """
-    training_data = pd.read_pickle('../data/tutorials/predictions/Preprocessed_complete_data_fixed_smiles_format.zip', compression='zip')
-    if MODELTYPE == 'EC50EC10':
-        PREDICTION_ENDPOINT = 'EC50,EC10'
-    # Get training set
-    training_data = training_data[(training_data.species_group == PREDICTION_SPECIES) & (training_data.endpoint.isin(PREDICTION_ENDPOINT.split(',')))]
+    training_data = __loadtrainingdf__(MODELTYPE, PREDICTION_SPECIES, PREDICTION_ENDPOINT)
     training_data = training_data.drop_duplicates(subset=['SMILES_Canonical_RDKit'])
-    training_data = PreProcessDataForInference(training_data).GetCanonicalSMILES()
-    
-    cls_df = pd.read_pickle(f'../data/tutorials/predictions/{MODELTYPE}_{PREDICTION_SPECIES}_CLS_embeddings.pkl.zip', compression='zip')
+
+    cls_df = __loadCLSembeddings__(MODELTYPE, PREDICTION_SPECIES)
     training_data = training_data.merge(cls_df, on='SMILES_Canonical_RDKit')
     cls_training_data = np.asarray(training_data.CLS_embeddings.tolist(), dtype=np.float32)
     cls = np.asarray(results.CLS_embeddings.tolist(), dtype=np.float32)
     if len(results) ==1:
         cls = cls.reshape(1,-1)
-    
+
     cossim = cosine_similarity(cls_training_data, cls)
-    idx = np.argmax(cossim, axis=0)
-    similarity_score = np.diag(cossim[idx])
-    results['most similar chemical'] = training_data.SMILES_Canonical_RDKit.iloc[idx].tolist()
-    results['cosine similarity'] = similarity_score
+    idx_closest = np.argmax(cossim, axis=0)
+    similarity_score_closest = np.diag(cossim[idx_closest])
+    results['most similar chemical'] = training_data.SMILES_Canonical_RDKit.iloc[idx_closest].tolist()
+    results['max cosine similarity'] = similarity_score_closest
+    results['mean cosine similarity'] = np.mean(cossim, axis=0)
 
     return results 
+
+def check_valid_smiles(smiles):
+    mol = Chem.MolFromSmiles(smiles, sanitize=False)
+    if (mol is not None) and ('*' not in smiles):
+        # Syntactically valid
+        return None
+    else:
+        return 'SMILES not valid'
+
+def check_valid_chemistry(smiles): 
+    if '*' in smiles:
+        return 'Not chemically valid'
+    try:
+        mol = Chem.MolFromSmiles(smiles, sanitize=False)  
+        Chem.SanitizeMol(mol)
+        # Chemically valid
+        return None
+    except:
+        # Chemically invalid
+        return 'Not chemically valid'
